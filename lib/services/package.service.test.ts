@@ -8,9 +8,10 @@ import { hashCode } from './code.service'
 
 const makeStubs = (lockerOverrides: Partial<LockerService> = {}) => {
   const packageRepo = createInMemoryPackageRepository()
+  const lockers = [createLocker({ id: 'locker-1', lockerNumber: 'L-001' })]
 
   const lockerService: LockerService = {
-    getAllLockers:        () => [],
+    getAllLockers:        () => lockers,
     getAvailableLockers: () => [],
     releaseExpiredHolds: () => {},
     holdBestFit:         () => createLocker(),
@@ -89,6 +90,7 @@ test('pickupPackage marks package RETRIEVED and locker AVAILABLE', () => {
   expect(pkg?.status).toBe('RETRIEVED')
   expect(pkg?.retrievedAt).toBeInstanceOf(Date)
   expect(result.lockerId).toBe('locker-1')
+  expect(result.lockerNumber).toBe('L-001')
   expect(setLockerAvailableCalls).toHaveLength(1)
 })
 

@@ -15,7 +15,7 @@ export type DepositInput = {
 }
 
 export type DepositResult = { pickupCode: string }
-export type PickupResult  = { lockerId: string }
+export type PickupResult  = { lockerId: string; lockerNumber: string }
 
 export const createPackageService = (
   lockerService:       LockerService,
@@ -48,10 +48,12 @@ export const createPackageService = (
     const pkg = packageRepo.findByCodeHash(hashCode(inputCode))
     if (!pkg || pkg.status !== 'STORED') throw new InvalidCodeError()
 
+    const locker = lockerService.getAllLockers().find(l => l.id === pkg.lockerId)
+
     packageRepo.update(pkg.id, { status: 'RETRIEVED', retrievedAt: new Date() })
     lockerService.setLockerAvailable(pkg.lockerId!)
 
-    return { lockerId: pkg.lockerId! }
+    return { lockerId: pkg.lockerId!, lockerNumber: locker?.lockerNumber ?? pkg.lockerId! }
   },
 })
 

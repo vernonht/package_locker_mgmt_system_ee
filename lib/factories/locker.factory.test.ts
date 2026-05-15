@@ -2,6 +2,7 @@ import { createLocker } from './locker.factory'
 
 test('createLocker returns default values', () => {
   const locker = createLocker()
+  expect(locker.lockerNumber).toMatch(/^L-\d{3}$/)
   expect(locker.size).toBe('SMALL')
   expect(locker.maxWidth).toBe(30)
   expect(locker.maxHeight).toBe(30)
@@ -23,4 +24,5 @@ test('createLocker generates unique IDs', () => {
   const a = createLocker()
   const b = createLocker()
   expect(a.id).not.toBe(b.id)
+  expect(a.lockerNumber).not.toBe(b.lockerNumber)
 })

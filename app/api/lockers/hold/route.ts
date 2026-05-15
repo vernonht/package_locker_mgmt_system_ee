@@ -13,7 +13,7 @@ export const POST = async (req: Request) => {
     const { width, height, depth } = parsed.data
     const locker = lockerService.holdBestFit(width, height, depth)
     const holdExpiresAt = new Date(locker.heldAt!.getTime() + 10 * 60 * 1000)
-    return Response.json({ lockerId: locker.id, lockerSize: locker.size, holdExpiresAt })
+    return Response.json({ lockerId: locker.id, lockerNumber: locker.lockerNumber, lockerSize: locker.size, holdExpiresAt })
   } catch (err) {
     return handleError(err)
   }

@@ -20,7 +20,10 @@ const SEED = [
   ...Array(2).fill({ size: 'LARGE', maxWidth: 80, maxHeight: 80, maxDepth: 100 }),
 ] as Parameters<typeof createLocker>[0][]
 
-const seed = () => SEED.forEach(overrides => lockerRepo.save(createLocker(overrides)))
+const seed = () => SEED.forEach((overrides, index) => {
+  const lockerNumber = `L-${(index + 1).toString().padStart(3, '0')}`
+  lockerRepo.save(createLocker({ ...overrides, lockerNumber }))
+})
 
 seed()
 

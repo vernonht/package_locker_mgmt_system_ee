@@ -3,6 +3,7 @@ export type LockerStatus = 'AVAILABLE' | 'HOLD' | 'OCCUPIED' | 'OUT_OF_ORDER'
 
 export interface Locker {
   id: string
+  lockerNumber: string
   size: LockerSize
   maxWidth: number
   maxHeight: number
