@@ -1,4 +1,4 @@
-import { LockerGrid } from '@/components/LockerGrid'
+import { AdminLockerSection } from '@/components/AdminLockerSection'
 import { NotificationLog } from '@/components/NotificationLog'
 import { OccupancySummary } from '@/components/OccupancySummary'
 
@@ -13,9 +13,7 @@ export default function AdminPage() {
 
         <OccupancySummary />
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <LockerGrid />
-        </div>
+        <AdminLockerSection />
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <NotificationLog />

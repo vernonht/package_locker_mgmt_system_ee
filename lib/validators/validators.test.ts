@@ -1,6 +1,7 @@
 import { holdSchema } from './hold.schema'
 import { depositSchema } from './deposit.schema'
 import { pickupSchema } from './pickup.schema'
+import { createLockerSchema } from './locker.schema'
 
 // --- holdSchema ---
 
@@ -81,4 +82,24 @@ test('pickupSchema rejects missing lockerNumber', () => {
 
 test('pickupSchema rejects empty lockerNumber', () => {
   expect(pickupSchema.safeParse({ pickupCode: 'A3F9C1', lockerNumber: '' }).success).toBe(false)
+})
+
+// --- createLockerSchema ---
+
+test('createLockerSchema accepts valid locker input', () => {
+  const result = createLockerSchema.safeParse({ size: 'MEDIUM', maxWidth: 50, maxHeight: 50, maxDepth: 60 })
+  expect(result.success).toBe(true)
+})
+
+test('createLockerSchema rejects invalid size', () => {
+  expect(createLockerSchema.safeParse({ size: 'HUGE', maxWidth: 50, maxHeight: 50, maxDepth: 60 }).success).toBe(false)
+})
+
+test('createLockerSchema rejects zero or negative dimensions', () => {
+  expect(createLockerSchema.safeParse({ size: 'SMALL', maxWidth: 0, maxHeight: 30, maxDepth: 40 }).success).toBe(false)
+  expect(createLockerSchema.safeParse({ size: 'SMALL', maxWidth: 30, maxHeight: -1, maxDepth: 40 }).success).toBe(false)
+})
+
+test('createLockerSchema rejects missing fields', () => {
+  expect(createLockerSchema.safeParse({ size: 'SMALL' }).success).toBe(false)
 })

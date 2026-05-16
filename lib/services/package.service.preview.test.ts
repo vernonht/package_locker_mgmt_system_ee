@@ -19,6 +19,7 @@ const makeStubs = () => {
     holdBestFit:         () => Promise.resolve(createLocker()),
     confirmOccupied:     () => Promise.resolve(),
     setLockerAvailable:  () => Promise.resolve(),
+    addLocker:           () => Promise.resolve(createLocker()),
   }
 
   const notificationService: NotificationService = {
@@ -95,6 +96,7 @@ test('previewPickup does NOT call setLockerAvailable', async () => {
     holdBestFit:         () => Promise.resolve(createLocker()),
     confirmOccupied:     () => Promise.resolve(),
     setLockerAvailable:  (id) => { setLockerAvailableCalls.push(id); return Promise.resolve() },
+    addLocker:           () => Promise.resolve(createLocker()),
   }
 
   const svc = createPackageService(lockerService, packageRepo, { send: () => Promise.resolve() }, createInMemoryStorageChargeConfigRepository())

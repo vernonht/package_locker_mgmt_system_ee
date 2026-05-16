@@ -18,6 +18,7 @@ const makeStubs = (lockerOverrides: Partial<LockerService> = {}) => {
     holdBestFit:         () => Promise.resolve(createLocker()),
     confirmOccupied:     () => Promise.resolve(),
     setLockerAvailable:  () => Promise.resolve(),
+    addLocker:           () => Promise.resolve(createLocker()),
     ...lockerOverrides,
   }
 

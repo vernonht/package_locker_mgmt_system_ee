@@ -1,4 +1,4 @@
-import type { Locker } from '@/lib/models/locker'
+import type { Locker, LockerSize } from '@/lib/models/locker'
 
 export type HoldLockerResult = {
   lockerId: string
@@ -31,5 +31,16 @@ export const lockerApi = {
   release: async (lockerId: string): Promise<void> => {
     const res = await fetch(`/api/lockers/${lockerId}/hold`, { method: 'DELETE' })
     if (!res.ok) throw new Error('Failed to release locker')
+  },
+
+  create: async (input: { size: LockerSize; maxWidth: number; maxHeight: number; maxDepth: number }): Promise<Locker> => {
+    const res = await fetch('/api/lockers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    })
+    if (res.status === 400) throw new Error('Invalid locker configuration.')
+    if (!res.ok) throw new Error('Failed to create locker.')
+    return res.json()
   },
 }

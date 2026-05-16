@@ -97,6 +97,38 @@ test('confirmOccupied throws HoldExpiredError if heldAt is older than 10 min', a
   await expect(svc.confirmOccupied(locker.id, 'pkg-1')).rejects.toThrow(HoldExpiredError)
 })
 
+test('addLocker saves a new AVAILABLE locker with the given size and dimensions', async () => {
+  const { repo, strategy } = await makeStubs()
+  const svc = createLockerService(repo, strategy)
+
+  const locker = await svc.addLocker({ size: 'MEDIUM', maxWidth: 50, maxHeight: 50, maxDepth: 60 })
+
+  expect(locker.size).toBe('MEDIUM')
+  expect(locker.maxWidth).toBe(50)
+  expect(locker.status).toBe('AVAILABLE')
+  const all = await repo.findAll()
+  expect(all).toHaveLength(1)
+  expect(all[0].id).toBe(locker.id)
+})
+
+test('addLocker assigns sequential lockerNumber based on existing lockers', async () => {
+  const { repo, strategy } = await makeStubs([{ lockerNumber: 'L-001' }, { lockerNumber: 'L-003' }])
+  const svc = createLockerService(repo, strategy)
+
+  const locker = await svc.addLocker({ size: 'SMALL', maxWidth: 30, maxHeight: 30, maxDepth: 40 })
+
+  expect(locker.lockerNumber).toBe('L-004')
+})
+
+test('addLocker assigns L-001 when no lockers exist', async () => {
+  const { repo, strategy } = await makeStubs()
+  const svc = createLockerService(repo, strategy)
+
+  const locker = await svc.addLocker({ size: 'LARGE', maxWidth: 80, maxHeight: 80, maxDepth: 100 })
+
+  expect(locker.lockerNumber).toBe('L-001')
+})
+
 test('setLockerAvailable clears status, currentPackageId and heldAt', async () => {
   const locker = createLocker({ status: 'OCCUPIED', currentPackageId: 'pkg-1', heldAt: new Date() })
   const { repo, strategy } = await makeStubs()
