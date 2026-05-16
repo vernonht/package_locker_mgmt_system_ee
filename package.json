@@ -7,10 +7,20 @@
     "build": "next build",
     "start": "next start",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "db:seed": "tsx prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "@types/pg": "^8.20.0",
+    "dotenv": "^17.4.2",
     "next": "16.2.6",
+    "pg": "^8.20.0",
+    "prisma": "^7.8.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "uuid": "^14.0.0",
@@ -28,6 +38,7 @@
     "supertest": "^7.2.2",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.9",
+    "tsx": "^4.22.0",
     "typescript": "^5"
   }
 }

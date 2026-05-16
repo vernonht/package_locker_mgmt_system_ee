@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Locker {
+  id               String   @id @default(uuid())
+  lockerNumber     String   @unique
+  size             String
+  maxWidth         Int
+  maxHeight        Int
+  maxDepth         Int
+  status           String   @default("AVAILABLE")
+  currentPackageId String?
+  heldAt           DateTime?
+  packages         Package[]
+
+  @@map("lockers")
+}
+
+model Package {
+  id              String    @id @default(uuid())
+  recipientName   String
+  recipientPhone  String
+  width           Int
+  height          Int
+  depth           Int
+  pickupCodeHash  String    @unique
+  status          String    @default("PENDING_DEPOSIT")
+  lockerId        String?
+  lockerNumber    String?
+  locker          Locker?   @relation(fields: [lockerId], references: [id])
+  createdAt       DateTime  @default(now())
+  retrievedAt     DateTime?
+
+  @@map("packages")
+}
+
+model NotificationLog {
+  id             String   @id @default(uuid())
+  recipientPhone String
+  lockerNumber   String
+  message        String
+  sentAt         DateTime @default(now())
+
+  @@map("notification_logs")
+}

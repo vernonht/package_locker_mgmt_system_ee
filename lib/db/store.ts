@@ -7,17 +7,17 @@ import { createNotificationService } from '@/lib/services/notification.service'
 import { bestFitByVolume } from '@/lib/strategies/best-fit.strategy'
 import { createLocker } from '@/lib/factories/locker.factory'
 
-const lockerMap = new Map()
+const lockerMap  = new Map()
 const packageMap = new Map()
 
-export const lockerRepo = createInMemoryLockerRepository(lockerMap)
-export const packageRepo = createInMemoryPackageRepository(packageMap)
+export const lockerRepo       = createInMemoryLockerRepository(lockerMap)
+export const packageRepo      = createInMemoryPackageRepository(packageMap)
 export const notificationRepo = createInMemoryNotificationRepository()
 
 const SEED = [
-  ...Array(5).fill({ size: 'SMALL', maxWidth: 30, maxHeight: 30, maxDepth: 40 }),
-  ...Array(5).fill({ size: 'MEDIUM', maxWidth: 50, maxHeight: 50, maxDepth: 60 }),
-  ...Array(2).fill({ size: 'LARGE', maxWidth: 80, maxHeight: 80, maxDepth: 100 }),
+  ...Array(5).fill({ size: 'SMALL',  maxWidth: 30, maxHeight: 30, maxDepth: 40  }),
+  ...Array(5).fill({ size: 'MEDIUM', maxWidth: 50, maxHeight: 50, maxDepth: 60  }),
+  ...Array(2).fill({ size: 'LARGE',  maxWidth: 80, maxHeight: 80, maxDepth: 100 }),
 ] as Parameters<typeof createLocker>[0][]
 
 const seed = () => SEED.forEach((overrides, index) => {
@@ -27,9 +27,9 @@ const seed = () => SEED.forEach((overrides, index) => {
 
 seed()
 
-export const lockerService = createLockerService(lockerRepo, bestFitByVolume)
+export const lockerService       = createLockerService(lockerRepo, bestFitByVolume)
 export const notificationService = createNotificationService(notificationRepo)
-export const packageService = createPackageService(lockerService, packageRepo, notificationService)
+export const packageService      = createPackageService(lockerService, packageRepo, notificationService)
 
 export const resetStore = () => {
   lockerMap.clear()
