@@ -76,7 +76,8 @@ export function DepositForm() {
     }
   }
 
-  const reset = () => {
+  const reset = async() => {
+    await lockerApi.release(hold!.lockerId)
     setStep('reserve')
     setHold(null)
     setError('')

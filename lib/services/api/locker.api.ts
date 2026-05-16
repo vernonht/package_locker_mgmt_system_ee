@@ -20,11 +20,16 @@ export const lockerApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ width, height, depth }),
     })
-    
+
     if (res.status === 409) throw new Error('No lockers available for this parcel size. Try again shortly.')
     if (res.status === 422) throw new Error('Parcel exceeds our largest locker (80×80×100 cm).')
     if (!res.ok) throw new Error('Validation error. Please check dimensions.')
-    
+
     return res.json()
+  },
+
+  release: async (lockerId: string): Promise<void> => {
+    const res = await fetch(`/api/lockers/${lockerId}/hold`, { method: 'DELETE' })
+    if (!res.ok) throw new Error('Failed to release locker')
   },
 }
