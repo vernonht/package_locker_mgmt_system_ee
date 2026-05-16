@@ -1,5 +1,7 @@
 import { createPackage } from '@/lib/factories/package.factory'
 import { generateCode, hashCode } from './code.service'
+import { calculateStorageCharge } from './storage-charge.service'
+import type { StorageChargeResult } from './storage-charge.service'
 import { InvalidCodeError } from '@/lib/errors'
 import type { LockerService } from './locker.service'
 import type { NotificationService } from './notification.service'
@@ -15,8 +17,9 @@ export type DepositInput = {
   depth:          number
 }
 
-export type DepositResult = { lockerId: string; lockerNumber: string }
-export type PickupResult  = { lockerId: string; lockerNumber: string }
+export type DepositResult  = { lockerId: string; lockerNumber: string }
+export type PickupResult   = { lockerId: string; lockerNumber: string }
+export type PickupPreview  = StorageChargeResult & { lockerNumber: string }
 
 export const createPackageService = (
   lockerService:       LockerService,
@@ -41,6 +44,13 @@ export const createPackageService = (
     await notificationService.send(recipientPhone, lockerNumber, pickupCode)
 
     return { lockerId, lockerNumber }
+  },
+
+  previewPickup: async (inputCode: string, now?: Date): Promise<PickupPreview> => {
+    const pkg = await packageRepo.findByCodeHash(hashCode(inputCode))
+    if (!pkg || pkg.status !== 'STORED') throw new InvalidCodeError()
+    const charge = calculateStorageCharge(pkg.createdAt, now)
+    return { ...charge, lockerNumber: pkg.lockerNumber ?? '' }
   },
 
   pickupPackage: async (inputCode: string): Promise<PickupResult> => {

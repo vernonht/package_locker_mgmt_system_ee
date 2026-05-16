@@ -12,6 +12,20 @@ export type DepositResult = {
   pickupCode: string
 }
 
+export type TierBreakdown = {
+  days: number
+  multiplier: number
+  ratePerDay: number
+  subtotal: number
+}
+
+export type PickupPreview = {
+  days: number
+  totalCharge: number
+  breakdown: TierBreakdown[]
+  lockerNumber: string
+}
+
 export const packageApi = {
   deposit: async (input: DepositInput): Promise<DepositResult> => {
     const res = await fetch('/api/packages/deposit', {
@@ -27,6 +41,19 @@ export const packageApi = {
     return res.json()
   },
 
+  previewPickup: async (pickupCode: string): Promise<PickupPreview> => {
+    const res = await fetch('/api/packages/pickup/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pickupCode }),
+    })
+
+    if (res.status === 404) throw new Error('Invalid or already-used code. Please check your notification.')
+    if (!res.ok) throw new Error('Something went wrong. Please try again.')
+
+    return res.json()
+  },
+
   pickup: async (pickupCode: string): Promise<{ lockerId: string; lockerNumber: string }> => {
     const res = await fetch('/api/packages/pickup', {
       method: 'POST',
@@ -34,10 +61,8 @@ export const packageApi = {
       body: JSON.stringify({ pickupCode }),
     })
 
-    if (!res.ok) {
-      const data = await res.json()
-      throw new Error(data.error?.message || 'Invalid or expired pickup code')
-    }
+    if (res.status === 404) throw new Error('Invalid or already-used code. Please check your notification.')
+    if (!res.ok) throw new Error('Something went wrong. Please try again.')
 
     return res.json()
   },
