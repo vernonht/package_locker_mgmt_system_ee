@@ -1,3 +1,3 @@
-import { notificationRepo } from '@/lib/db/store'
+import { notificationRepo } from '@/lib/db'
 
-export const GET = () => Response.json(notificationRepo.findAll())
+export const GET = async () => Response.json(await notificationRepo.findAll())

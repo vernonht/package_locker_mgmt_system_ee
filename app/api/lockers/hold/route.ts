@@ -1,4 +1,4 @@
-import { lockerService } from '@/lib/db/store'
+import { lockerService } from '@/lib/db'
 import { holdSchema } from '@/lib/validators/hold.schema'
 import { handleError } from '@/lib/errors/handler'
 import { treeifyError } from 'zod'
@@ -9,11 +9,11 @@ export const POST = async (req: Request) => {
   if (!parsed.success) return Response.json({ error: treeifyError(parsed.error) }, { status: 400 })
 
   try {
-    lockerService.releaseExpiredHolds()
+    await lockerService.releaseExpiredHolds()
     const { width, height, depth } = parsed.data
-    const locker = lockerService.holdBestFit(width, height, depth)
-    const holdExpiresAt = new Date(locker.heldAt!.getTime() + 10 * 60 * 1000)
-    return Response.json({ lockerId: locker.id, lockerNumber: locker.lockerNumber, lockerSize: locker.size, holdExpiresAt })
+    const locker = await lockerService.holdBestFit(width, height, depth)
+    const holdExpiresAt = new Date(locker!.heldAt!.getTime() + 10 * 60 * 1000)
+    return Response.json({ lockerId: locker!.id, lockerNumber: locker!.lockerNumber, lockerSize: locker!.size, holdExpiresAt })
   } catch (err) {
     return handleError(err)
   }

@@ -4,106 +4,108 @@ import { createLocker } from '@/lib/factories/locker.factory'
 import { LockerNotHeldError, HoldExpiredError } from '@/lib/errors'
 import type { AllocationStrategy } from '@/lib/strategies/allocation.strategy'
 
-const makeStubs = (seed: Parameters<typeof createLocker>[0][] = []) => {
+const makeStubs = async (seed: Parameters<typeof createLocker>[0][] = []) => {
   const repo = createInMemoryLockerRepository()
-  seed.forEach(overrides => repo.save(createLocker(overrides)))
+  for (const overrides of seed) await repo.save(createLocker(overrides))
   const strategy: AllocationStrategy = (_w, _h, _d, candidates) => candidates[0]
   return { repo, strategy }
 }
 
-test('getAllLockers returns all lockers', () => {
-  const { repo, strategy } = makeStubs([{}, {}])
+test('getAllLockers returns all lockers', async () => {
+  const { repo, strategy } = await makeStubs([{}, {}])
   const svc = createLockerService(repo, strategy)
-  expect(svc.getAllLockers()).toHaveLength(2)
+  expect(await svc.getAllLockers()).toHaveLength(2)
 })
 
-test('getAvailableLockers returns only AVAILABLE lockers', () => {
-  const { repo, strategy } = makeStubs([{ status: 'AVAILABLE' }, { status: 'OCCUPIED' }])
+test('getAvailableLockers returns only AVAILABLE lockers', async () => {
+  const { repo, strategy } = await makeStubs([{ status: 'AVAILABLE' }, { status: 'OCCUPIED' }])
   const svc = createLockerService(repo, strategy)
-  expect(svc.getAvailableLockers()).toHaveLength(1)
+  expect(await svc.getAvailableLockers()).toHaveLength(1)
 })
 
-test('releaseExpiredHolds releases lockers held longer than 10 min', () => {
+test('releaseExpiredHolds releases lockers held longer than 10 min', async () => {
   const expiredAt = new Date(Date.now() - 11 * 60 * 1000)
-  const { repo, strategy } = makeStubs([{ status: 'HOLD', heldAt: expiredAt }])
+  const { repo, strategy } = await makeStubs([{ status: 'HOLD', heldAt: expiredAt }])
   const svc = createLockerService(repo, strategy)
 
-  svc.releaseExpiredHolds()
+  await svc.releaseExpiredHolds()
 
-  expect(repo.findAll()[0].status).toBe('AVAILABLE')
-  expect(repo.findAll()[0].heldAt).toBeNull()
+  const all = await repo.findAll()
+  expect(all[0].status).toBe('AVAILABLE')
+  expect(all[0].heldAt).toBeNull()
 })
 
-test('releaseExpiredHolds does not release recently held lockers', () => {
-  const { repo, strategy } = makeStubs([{ status: 'HOLD', heldAt: new Date() }])
+test('releaseExpiredHolds does not release recently held lockers', async () => {
+  const { repo, strategy } = await makeStubs([{ status: 'HOLD', heldAt: new Date() }])
   const svc = createLockerService(repo, strategy)
 
-  svc.releaseExpiredHolds()
+  await svc.releaseExpiredHolds()
 
-  expect(repo.findAll()[0].status).toBe('HOLD')
+  const all = await repo.findAll()
+  expect(all[0].status).toBe('HOLD')
 })
 
-test('holdBestFit marks locker HOLD with heldAt timestamp', () => {
-  const { repo, strategy } = makeStubs([{ status: 'AVAILABLE' }])
+test('holdBestFit marks locker HOLD with heldAt timestamp', async () => {
+  const { repo, strategy } = await makeStubs([{ status: 'AVAILABLE' }])
   const svc = createLockerService(repo, strategy)
 
-  const locker = svc.holdBestFit(10, 10, 10)
+  const locker = await svc.holdBestFit(10, 10, 10)
 
-  expect(locker.status).toBe('HOLD')
-  expect(locker.heldAt).toBeInstanceOf(Date)
+  expect(locker!.status).toBe('HOLD')
+  expect(locker!.heldAt).toBeInstanceOf(Date)
 })
 
-test('confirmOccupied transitions HOLD → OCCUPIED and clears heldAt', () => {
+test('confirmOccupied transitions HOLD → OCCUPIED and clears heldAt', async () => {
   const locker = createLocker({ status: 'HOLD', heldAt: new Date() })
-  const { repo, strategy } = makeStubs()
-  repo.save(locker)
+  const { repo, strategy } = await makeStubs()
+  await repo.save(locker)
   const svc = createLockerService(repo, strategy)
 
-  svc.confirmOccupied(locker.id, 'pkg-1')
+  await svc.confirmOccupied(locker.id, 'pkg-1')
 
-  const updated = repo.findById(locker.id)!
+  const updated = (await repo.findById(locker.id))!
   expect(updated.status).toBe('OCCUPIED')
   expect(updated.currentPackageId).toBe('pkg-1')
   expect(updated.heldAt).toBeNull()
 })
 
-test('confirmOccupied throws LockerNotHeldError if locker is AVAILABLE', () => {
+test('confirmOccupied throws LockerNotHeldError if locker is AVAILABLE', async () => {
   const locker = createLocker({ status: 'AVAILABLE' })
-  const { repo, strategy } = makeStubs()
-  repo.save(locker)
+  const { repo, strategy } = await makeStubs()
+  await repo.save(locker)
   const svc = createLockerService(repo, strategy)
 
-  expect(() => svc.confirmOccupied(locker.id, 'pkg-1')).toThrow(LockerNotHeldError)
+  await expect(svc.confirmOccupied(locker.id, 'pkg-1')).rejects.toThrow(LockerNotHeldError)
 })
 
-test('confirmOccupied throws LockerNotHeldError if locker is OCCUPIED', () => {
+test('confirmOccupied throws LockerNotHeldError if locker is OCCUPIED', async () => {
   const locker = createLocker({ status: 'OCCUPIED' })
-  const { repo, strategy } = makeStubs()
-  repo.save(locker)
+  const { repo, strategy } = await makeStubs()
+  await repo.save(locker)
   const svc = createLockerService(repo, strategy)
 
-  expect(() => svc.confirmOccupied(locker.id, 'pkg-1')).toThrow(LockerNotHeldError)
+  await expect(svc.confirmOccupied(locker.id, 'pkg-1')).rejects.toThrow(LockerNotHeldError)
 })
 
-test('confirmOccupied throws HoldExpiredError if heldAt is older than 10 min', () => {
+test('confirmOccupied throws HoldExpiredError if heldAt is older than 10 min', async () => {
   const expiredAt = new Date(Date.now() - 11 * 60 * 1000)
   const locker = createLocker({ status: 'HOLD', heldAt: expiredAt })
-  const { repo, strategy } = makeStubs()
-  repo.save(locker)
+  const { repo, strategy } = await makeStubs()
+  await repo.save(locker)
   const svc = createLockerService(repo, strategy)
 
-  expect(() => svc.confirmOccupied(locker.id, 'pkg-1')).toThrow(HoldExpiredError)
+  await expect(svc.confirmOccupied(locker.id, 'pkg-1')).rejects.toThrow(HoldExpiredError)
 })
 
-test('setLockerAvailable clears status, currentPackageId and heldAt', () => {
+test('setLockerAvailable clears status, currentPackageId and heldAt', async () => {
   const locker = createLocker({ status: 'OCCUPIED', currentPackageId: 'pkg-1', heldAt: new Date() })
-  const { repo, strategy } = makeStubs()
-  repo.save(locker)
+  const { repo, strategy } = await makeStubs()
+  await repo.save(locker)
   const svc = createLockerService(repo, strategy)
 
-  svc.setLockerAvailable(locker.id)
+  await svc.setLockerAvailable(locker.id)
 
-  const updated = repo.findById(locker.id)!
+  const updated = (await repo.findById(locker.id))!
   expect(updated.status).toBe('AVAILABLE')
   expect(updated.currentPackageId).toBeNull()
   expect(updated.heldAt).toBeNull()
