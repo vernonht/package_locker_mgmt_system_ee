@@ -1,7 +1,7 @@
 export interface NotificationLog {
   id: string
   recipientPhone: string
-  lockerId: string
+  lockerNumber: string
   sentAt: Date
   message: string
 }

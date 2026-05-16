@@ -352,7 +352,7 @@ Files:
 - `lib/validators/deposit.schema.ts` ← updated: now requires `lockerId`, no allocation fields
   ```ts
   z.object({
-    lockerId:       z.string().uuid(),
+    lockerId:       z.uuid(),
     recipientName:  z.string().min(1),
     recipientPhone: z.string().min(7),
     width:          z.number().positive(),   // cm — stored on Package for record
@@ -429,7 +429,7 @@ File: `app/(customer)/kiosk/page.tsx` + `components/PickupForm.tsx`
 
 - Single input: Pickup Code (6 chars, uppercase enforced)
 - On submit: `POST /api/packages/pickup`
-- On success: show "Locker {id} is now open — please collect your package"
+- On success: show "Locker {lockerNumber} is now open — please collect your package"
 - On error: "Invalid code. Please check your notification and try again."
 
 **Done when**: Full pickup flow works in the browser using a code from a deposit.
@@ -448,7 +448,7 @@ File: `components/LockerGrid.tsx`
   - `HOLD` → blue (reserved, countdown timer shown if `heldAt` is present)
   - `OCCUPIED` → amber
   - `OUT_OF_ORDER` → red
-- Shows: Locker ID, Size badge, max dimensions (W×H×D cm), Status
+- Shows: Locker number, Size badge, max dimensions (W×H×D cm), Status
 
 Used on both Agent Dashboard and Admin page.
 

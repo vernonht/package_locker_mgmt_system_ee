@@ -7,6 +7,7 @@ import type { PackageRepository } from '@/lib/repositories/interfaces/package.re
 
 export type DepositInput = {
   lockerId:       string
+  lockerNumber:   string
   recipientName:  string
   recipientPhone: string
   width:          number
@@ -15,7 +16,7 @@ export type DepositInput = {
 }
 
 export type DepositResult = { pickupCode: string }
-export type PickupResult  = { lockerId: string; lockerNumber: string }
+export type PickupResult = { lockerId: string; lockerNumber: string }
 
 export const createPackageService = (
   lockerService:       LockerService,
@@ -23,7 +24,7 @@ export const createPackageService = (
   notificationService: NotificationService,
 ) => ({
   depositPackage: (input: DepositInput): DepositResult => {
-    const { lockerId, recipientName, recipientPhone, width, height, depth } = input
+    const { lockerId, lockerNumber, recipientName, recipientPhone, width, height, depth } = input
 
     const pickupCode = generateCode()
     const pkg = createPackage({
@@ -35,11 +36,12 @@ export const createPackageService = (
       pickupCodeHash: hashCode(pickupCode),
       status:         'STORED',
       lockerId,
+      lockerNumber,
     })
 
     lockerService.confirmOccupied(lockerId, pkg.id)
     packageRepo.save(pkg)
-    notificationService.send(recipientPhone, lockerId, pickupCode)
+    notificationService.send(recipientPhone, lockerNumber, pickupCode)
 
     return { pickupCode }
   },

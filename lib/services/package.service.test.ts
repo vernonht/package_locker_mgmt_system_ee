@@ -31,6 +31,7 @@ const makeStubs = (lockerOverrides: Partial<LockerService> = {}) => {
 
 const validInput = {
   lockerId:       'locker-1',
+  lockerNumber:   'L-001',
   recipientName:  'Jane',
   recipientPhone: '+60123456789',
   width:          25,

@@ -1,7 +1,8 @@
 import { z } from 'zod'
 
 export const depositSchema = z.object({
-  lockerId:       z.string().uuid(),
+  lockerId:       z.uuid(),
+  lockerNumber:   z.string().min(1),
   recipientName:  z.string().min(1),
   recipientPhone: z.string().min(7),
   width:          z.number().positive(),

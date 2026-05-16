@@ -10,6 +10,7 @@ export interface Package {
   pickupCodeHash: string
   status: PackageStatus
   lockerId: string | null
+  lockerNumber: string | null
   createdAt: Date
   retrievedAt: Date | null
 }
