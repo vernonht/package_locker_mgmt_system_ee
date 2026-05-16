@@ -29,6 +29,7 @@ test('holdSchema rejects missing fields', () => {
 test('depositSchema accepts valid input', () => {
   const result = depositSchema.safeParse({
     lockerId:       'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+    lockerNumber:   'L-001',
     recipientName:  'Jane',
     recipientPhone: '+60123456789',
     width:          25,

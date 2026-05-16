@@ -20,9 +20,9 @@ const makeStubs = (lockerOverrides: Partial<LockerService> = {}) => {
     ...lockerOverrides,
   }
 
-  const notificationCalls: { phone: string; lockerId: string; code: string }[] = []
+  const notificationCalls: { phone: string; lockerNumber: string; code: string }[] = []
   const notificationService: NotificationService = {
-    send: (phone, lockerId, code) => { notificationCalls.push({ phone, lockerId, code }) },
+    send: (phone, lockerNumber, code) => { notificationCalls.push({ phone, lockerNumber, code }) },
   }
 
   const svc = createPackageService(lockerService, packageRepo, notificationService)
@@ -60,7 +60,7 @@ test('depositPackage calls notificationService.send with correct args', () => {
   const result = svc.depositPackage(validInput)
   expect(notificationCalls).toHaveLength(1)
   expect(notificationCalls[0].phone).toBe('+60123456789')
-  expect(notificationCalls[0].lockerId).toBe('locker-1')
+  expect(notificationCalls[0].lockerNumber).toBe('L-001')
   expect(notificationCalls[0].code).toBe(result.pickupCode)
 })
 
