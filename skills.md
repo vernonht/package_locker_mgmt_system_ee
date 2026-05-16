@@ -32,8 +32,8 @@ Each skill is a self-contained unit of work. Complete in order — later skills 
 **Goal**: Scaffold Next.js project with correct config.
 
 - `npx create-next-app@latest . --typescript --tailwind --app --no-src-dir --import-alias '@/*'`
-- Install dependencies: `zod`, `uuid`
-- Install dev dependencies: `@types/uuid`
+- Install dependencies: `zod`
+- Note: do **not** install `uuid` — use `crypto.randomUUID()` (Node.js built-in) everywhere instead
 - Delete boilerplate: `app/page.tsx` default content, `globals.css` excess styles
 - Verify `tsconfig.json` has `strict: true`
 
@@ -46,9 +46,20 @@ Each skill is a self-contained unit of work. Complete in order — later skills 
 **Goal**: Define all types and enums. Zero logic, zero side effects.
 
 Files to create:
-- `lib/models/locker.ts` — `LockerSize`, `LockerStatus` (`'AVAILABLE' | 'HOLD' | 'OCCUPIED' | 'OUT_OF_ORDER'`), `Locker` interface (include `maxWidth`, `maxHeight`, `maxDepth`, `heldAt: Date | null` fields)
-- `lib/models/package.ts` — `PackageStatus`, `Package` interface (include `width`, `height`, `depth` fields; no `packageSize`)
-- `lib/models/notification.ts` — `NotificationLog` interface
+- `lib/models/locker.ts` — `LockerSize`, `LockerStatus` (`'AVAILABLE' | 'HOLD' | 'OCCUPIED' | 'OUT_OF_ORDER'`), `Locker` interface:
+  ```ts
+  interface Locker {
+    id: string
+    lockerNumber: string   // human-readable label e.g. "L-001", generated sequentially
+    size: LockerSize
+    maxWidth: number; maxHeight: number; maxDepth: number  // cm
+    status: LockerStatus
+    currentPackageId: string | null
+    heldAt: Date | null
+  }
+  ```
+- `lib/models/package.ts` — `PackageStatus`, `Package` interface (include `width`, `height`, `depth`, `lockerNumber: string | null` fields; no `packageSize`)
+- `lib/models/notification.ts` — `NotificationLog` interface with `lockerNumber: string`
 
 **Done when**: All models compile cleanly, no `any` types.
 
@@ -106,12 +117,16 @@ Files:
 **Goal**: Single source of truth for creating domain objects. Used in seed data AND tests.
 
 Files:
-- `lib/factories/locker.factory.ts` — `createLocker(overrides?: Partial<Locker>): Locker` (default `heldAt: null`)
+- `lib/factories/locker.factory.ts` — `createLocker(overrides?: Partial<Locker>): Locker`
+  - Uses module-level counter to generate sequential `lockerNumber` values (`L-001`, `L-002`, …)
+  - Uses `crypto.randomUUID()` for `id`
+  - Defaults: `size: 'SMALL'`, `heldAt: null`, `status: 'AVAILABLE'`, `currentPackageId: null`
 - `lib/factories/package.factory.ts` — `createPackage(overrides?: Partial<Package>): Package`
+  - Defaults include `lockerNumber: null`
 
-Default values must match the seeding dimensions in `plan.md`.
+Default dimensions must match the seeding table in `plan.md`.
 
-**TDD**: write factory tests — assert defaults, assert overrides win, assert IDs are unique per call.
+**TDD**: write factory tests — assert defaults (including `lockerNumber` format `/^L-\d{3}$/`), assert overrides win, assert IDs and lockerNumbers are unique per call.
 
 **Done when**: Factories used in all tests instead of raw object literals; seed data imports from factories.
 
@@ -182,8 +197,8 @@ Files:
 - `lib/repositories/in-memory/package.repository.ts` — same pattern, `createInMemoryPackageRepository`
 - `lib/repositories/in-memory/notification.repository.ts` — `createInMemoryNotificationRepository`
 - `lib/db/store.ts` — Bootstrap module: instantiates all repos with shared Maps, seeds lockers via `createLocker()` factory:
-  - 3× SMALL  — `maxWidth: 30, maxHeight: 30, maxDepth: 40`
-  - 3× MEDIUM — `maxWidth: 50, maxHeight: 50, maxDepth: 60`
+  - 5× SMALL  — `maxWidth: 30, maxHeight: 30, maxDepth: 40`
+  - 5× MEDIUM — `maxWidth: 50, maxHeight: 50, maxDepth: 60`
   - 2× LARGE  — `maxWidth: 80, maxHeight: 80, maxDepth: 100`
   - All `AVAILABLE`
 - Exports `resetStore()` for test teardown — clears all Maps and re-seeds
@@ -214,11 +229,17 @@ File: `lib/services/code.service.ts`
 
 File: `lib/services/notification.service.ts`
 
-- `sendPickupNotification(phone, lockerId, code): void`
-  - Formats: `"SMS → {phone}: Your package is in Locker {lockerId}. Code: {code}"`
+```ts
+export type NotificationService = {
+  send(phone: string, lockerNumber: string, code: string): void
+}
+```
+
+- `send(phone, lockerNumber, code): void`
+  - Formats: `"SMS → {phone}: Your package is in Locker {lockerNumber}. Code: {code}"`
   - `console.log` the message
-  - Appends to `notificationLog` in store
-- `getNotificationLog(): NotificationLog[]` — returns all logs
+  - Saves `{ id, recipientPhone, lockerNumber, message, sentAt }` to `notificationRepo`
+- Note: the second parameter is `lockerNumber` (e.g. `"L-001"`)
 
 **Done when**: Calling send appends to log and prints to console.
 
@@ -306,28 +327,28 @@ export type PackageService = ReturnType<typeof createPackageService>
 ```
 
 - `depositPackage(input: DepositInput): DepositResult`
-  - `DepositInput`: `{ lockerId, recipientName, recipientPhone, width, height, depth }`
-  1. `lockerService.confirmOccupied(lockerId, tempId)` — throws `LockerNotHeldError` or `HoldExpiredError` if invalid
-  2. `codeService.generateCode()` + `codeService.hashCode()`
-  3. Create Package via `packageRepo.save()` using `createPackage()` factory
-  4. `lockerService.confirmOccupied(lockerId, package.id)` (update with real packageId)
-  5. `notificationService.send(phone, lockerId, plaintextCode)`
-  6. Return `{ pickupCode }` (only time plaintext leaves)
+  - `DepositInput`: `{ lockerId, lockerNumber, recipientName, recipientPhone, width, height, depth }`
+  1. `codeService.generateCode()` + `codeService.hashCode()`
+  2. Create Package via `packageRepo.save()` using `createPackage()` factory (stores `lockerId` + `lockerNumber`)
+  3. `lockerService.confirmOccupied(lockerId, pkg.id)` — throws `LockerNotHeldError` or `HoldExpiredError` if invalid
+  4. `notificationService.send(phone, lockerNumber, plaintextCode)`
+  5. Return `{ pickupCode }` (only time plaintext leaves)
 
 - `pickupPackage(inputCode: string): PickupResult`
   1. `codeService.hashCode(inputCode)` → look up package via `packageRepo.findByCodeHash()`
   2. If not found or status !== `STORED` → throw `InvalidCodeError`
   3. `packageRepo.update()` → status `RETRIEVED`, `retrievedAt: new Date()`
-  4. `lockerService.setLockerAvailable()`
-  5. Return `{ lockerId }`
+  4. `lockerService.setLockerAvailable(lockerId)`
+  5. Return `{ lockerId, lockerNumber }`
 
 **TDD** — write `package.service.test.ts` with full stub injections before implementing:
 ```
 ✓ depositPackage returns pickupCode on success
 ✓ depositPackage propagates LockerNotHeldError from lockerService
 ✓ depositPackage propagates HoldExpiredError from lockerService
-✓ depositPackage calls notificationService.send with correct args
+✓ depositPackage calls notificationService.send with lockerNumber
 ✓ pickupPackage sets package RETRIEVED and locker AVAILABLE
+✓ pickupPackage returns lockerId and lockerNumber
 ✓ pickupPackage throws InvalidCodeError for wrong code
 ✓ pickupPackage throws InvalidCodeError if already RETRIEVED
 ```
@@ -349,10 +370,11 @@ Files:
     depth:  z.number().positive(),
   })
   ```
-- `lib/validators/deposit.schema.ts` ← updated: now requires `lockerId`, no allocation fields
+- `lib/validators/deposit.schema.ts` ← requires `lockerId` + `lockerNumber`
   ```ts
   z.object({
     lockerId:       z.uuid(),
+    lockerNumber:   z.string().min(1),
     recipientName:  z.string().min(1),
     recipientPhone: z.string().min(7),
     width:          z.number().positive(),   // cm — stored on Package for record
@@ -374,20 +396,29 @@ Files:
 **Goal**: Wire services to HTTP endpoints.
 
 Files:
-- `app/api/lockers/route.ts` — `GET`: list lockers (optional `?status=` filter)
-- `app/api/lockers/hold/route.ts` — `POST`: validate hold body, call `lockerService.releaseExpiredHolds()` then `holdBestFit()`, return `{ lockerId, lockerSize, holdExpiresAt }`
+- `lib/errors/handler.ts` — shared `handleError(err): Response` function; catches all `AppError` subclasses by type
+- `app/api/lockers/route.ts` — `GET`: list lockers (optional `?status=` / `?size=` filters)
+- `app/api/lockers/hold/route.ts` — `POST`: validate hold body, call `releaseExpiredHolds()` then `holdBestFit()`, return `{ lockerId, lockerNumber, lockerSize, holdExpiresAt }`
 - `app/api/packages/deposit/route.ts` — `POST`: validate deposit body, call `depositPackage()`, return `{ pickupCode }`
-- `app/api/packages/pickup/route.ts` — `POST`: validate pickup body, call `pickupPackage()`
+- `app/api/packages/pickup/route.ts` — `POST`: validate pickup body, call `pickupPackage()`, return `{ lockerId, lockerNumber, message }`
+- `app/api/notifications/route.ts` — `GET`: return all notification logs via `notificationRepo.findAll()`
 
-Error handling pattern:
-- `400` for Zod validation failures (return `error.flatten()`)
+Error handling pattern (all routes use `handleError` from `lib/errors/handler.ts`):
+- `400` for Zod validation failures
 - `409` for `LockerUnavailableError` or `LockerNotHeldError`
-- `410` for `HoldExpiredError` (Gone — hold timed out, agent must re-hold)
-- `422` for `ParcelTooLargeError` (include max locker dims in response body)
-- `404` for invalid pickup codes
-- `500` for unexpected errors
+- `410` for `HoldExpiredError` (hold timed out, agent must re-hold)
+- `422` for `ParcelTooLargeError`
+- `404` for `InvalidCodeError`
+- Unhandled errors re-thrown to Next.js
 
-**Done when**: All endpoints work correctly via curl or Postman.
+Also create API client modules used by all UI components:
+- `lib/services/api/locker.api.ts` — `fetchAll(params?)`, `hold(w, h, d)`
+- `lib/services/api/package.api.ts` — `deposit(input)`, `pickup(code)`
+- `lib/services/api/notification.api.ts` — `fetchAll()`
+
+Each client module translates HTTP status codes into typed error messages before throwing.
+
+**Done when**: All endpoints work correctly via curl; client modules handle all error statuses.
 
 ---
 
@@ -399,23 +430,22 @@ File: `app/(agent)/dashboard/page.tsx` + `components/DepositForm.tsx`
 
 Two-step flow:
 
+Uses `lockerApi` and `packageApi` from `lib/services/api/` — no raw `fetch()` calls in components.
+
 **Step 1 — Reserve** (shown first)
 - Form fields: Width (cm), Height (cm), Depth (cm)
-- On submit: `POST /api/lockers/hold`
-- On success: show "Locker `{lockerSize} – {lockerId}` reserved. You have 10 minutes to load the package." Store `lockerId` in component state.
-- On error:
-  - `409` → "No lockers available for this parcel size. Try again shortly."
-  - `422` → "Parcel exceeds our largest locker (80×80×100 cm)."
-  - `400` → inline field validation errors
+- On submit: `lockerApi.hold(w, h, d)`
+- On success: show "Locker `{lockerSize}` reserved. You have 10 minutes to load the package." Store `{ lockerId, lockerNumber }` in component state.
+- On error: display the message thrown by `lockerApi` (409 / 422 mapped to user-friendly strings)
 
 **Step 2 — Confirm Deposit** (shown after successful hold)
 - Additional fields: Recipient Name, Recipient Phone
-- On submit: `POST /api/packages/deposit` with `lockerId` from step 1 + dimensions + recipient info
-- On success: show `Pickup Code` prominently (SMS also sent)
+- On submit: `packageApi.deposit({ lockerId, lockerNumber, ...dims, ...recipient })`
+- On success: show `Pickup Code` prominently (SMS also sent to recipient)
 - On error:
-  - `409` → "Hold no longer valid. Please reserve a locker again."
-  - `410` → "Hold expired (10 min limit). Please reserve a locker again." (auto-resets to Step 1)
-- Below form: show `LockerGrid` component (fetches `GET /api/lockers`)
+  - 409 → "Hold no longer valid. Please reserve a locker again."
+  - 410 → "Hold expired (10 min limit). Please reserve a locker again." (auto-resets to Step 1)
+- Below form: show `LockerGrid` component
 
 **Done when**: Full deposit flow works in the browser.
 
@@ -427,10 +457,10 @@ Two-step flow:
 
 File: `app/(customer)/kiosk/page.tsx` + `components/PickupForm.tsx`
 
-- Single input: Pickup Code (6 chars, uppercase enforced)
-- On submit: `POST /api/packages/pickup`
-- On success: show "Locker {lockerNumber} is now open — please collect your package"
-- On error: "Invalid code. Please check your notification and try again."
+- Single input: Pickup Code (6 chars, auto-uppercased, non-hex chars stripped, submit disabled until length === 6)
+- On submit: `packageApi.pickup(code)`
+- On success: show locker number prominently (e.g. `L-001`) — "Locker is now open — please collect your package"
+- On error: display message from `packageApi` (404 → "Invalid code. Please check your notification and try again.")
 
 **Done when**: Full pickup flow works in the browser using a code from a deposit.
 
@@ -442,15 +472,15 @@ File: `app/(customer)/kiosk/page.tsx` + `components/PickupForm.tsx`
 
 File: `components/LockerGrid.tsx`
 
-- Fetches `GET /api/lockers` (client component with `useEffect`, or RSC)
+- Client component (`'use client'`) — uses `lockerApi.fetchAll()`, auto-refreshes every 5 seconds
 - Renders a grid of locker cards, color-coded:
   - `AVAILABLE` → green
-  - `HOLD` → blue (reserved, countdown timer shown if `heldAt` is present)
+  - `HOLD` → blue (with countdown timer: minutes remaining until 10-min hold expires)
   - `OCCUPIED` → amber
   - `OUT_OF_ORDER` → red
-- Shows: Locker number, Size badge, max dimensions (W×H×D cm), Status
+- Each card shows: locker number (e.g. `L-001`), size badge, max dimensions (W×H×D cm), status chip
 
-Used on both Agent Dashboard and Admin page.
+Used on Agent Dashboard, Admin page.
 
 ---
 
@@ -458,13 +488,14 @@ Used on both Agent Dashboard and Admin page.
 
 **Goal**: System-level overview.
 
-File: `app/admin/page.tsx`
+Files:
+- `app/admin/page.tsx` — server component shell; renders three client components
+- `components/OccupancySummary.tsx` — live occupied / on-hold / available counts; fetches `lockerApi.fetchAll()`, refreshes every 5s
+- `components/NotificationLog.tsx` — auto-refreshing table fetching `notificationApi.fetchAll()`, newest first; columns: Phone, Locker Number, Sent At, Message
 
-- Full `LockerGrid` with all lockers
-- Occupancy summary: `X/Y lockers occupied`
-- `NotificationLog` table: columns = Phone, Locker, Sent At, Message
+The page itself has no server-side data fetching — all live data is in the client components so the grid and log refresh without a full page reload.
 
-**Done when**: Admin page shows real-time locker state and all past notifications.
+**Done when**: Admin page shows real-time locker state, live occupancy counts, and all past notifications.
 
 ---
 
@@ -490,17 +521,52 @@ File: `app/admin/page.tsx`
 
 ---
 
-## Skill 15 — 48h Timeout (Phase 6)
+## Skill 15 — Storage Charges
 
-**Goal**: Auto-expire packages not collected within 48 hours.
+**Goal**: Calculate the storage fee owed for a package based on how long it has been in the locker. Base amount and tier multipliers are configurable.
 
-Options (pick one):
-- **App-level**: On each `GET /api/lockers`, scan for packages where `createdAt < now - 48h` and status is `STORED` — release them
-- **Cron job**: Use `node-cron` in a Next.js custom server or a separate worker script
+Files:
+- `lib/config/storage-charges.ts` — exported config type and default values:
+  ```ts
+  export type StorageChargeConfig = {
+    baseAmountPerDay: number
+    tiers: Array<{ upToDay: number | null; multiplier: number }>
+  }
 
-Logic:
-- Mark Package `EXPIRED` (add status to enum)
-- Release Locker back to `AVAILABLE`
-- Log a notification: `"EXPIRED: Locker {id} released — package not collected"`
+  export const defaultStorageChargeConfig: StorageChargeConfig = {
+    baseAmountPerDay: 0.50,
+    tiers: [
+      { upToDay: 5,    multiplier: 1 },  // days 1–5:  $0.50/day
+      { upToDay: 10,   multiplier: 2 },  // days 6–10: $1.00/day
+      { upToDay: null, multiplier: 3 },  // days 11+:  $1.50/day
+    ],
+  }
+  ```
+- `lib/services/storage-charge.service.ts` — pure function:
+  ```ts
+  calculateStorageCharge(
+    createdAt: Date,
+    now: Date = new Date(),
+    config: StorageChargeConfig = defaultStorageChargeConfig,
+  ): StorageChargeResult
+  // Returns: { days, totalCharge, breakdown: TierBreakdown[], config }
+  ```
+  - Minimum charge is 1 day (even if stored less than 24h)
+  - `breakdown` lists days, multiplier, ratePerDay, and subtotal for each tier
 
-**Done when**: A package created 48+ hours ago auto-releases its locker on next check.
+**TDD** — write `storage-charge.service.test.ts` first:
+```
+✓ 1 day charges 1× base ($0.50)
+✓ 5 days charges 5×1× ($2.50)
+✓ 6 days charges 5×1× + 1×2× ($3.50)
+✓ 10 days charges 5×1× + 5×2× ($7.50)
+✓ 12 days charges 5×1× + 5×2× + 2×3× ($10.50)
+✓ returns breakdown array with correct subtotals per tier
+✓ custom config: different base amount
+✓ custom config: different multipliers
+✓ accepts explicit `now` for deterministic testing
+✓ minimum 1 day even if just deposited
+✓ uses defaultStorageChargeConfig when no config provided
+```
+
+**Done when**: Pure calculation function passes all tests with both default and custom configs. No API route or UI required in this phase — the service is a foundation for billing integration.
