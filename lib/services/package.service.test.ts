@@ -1,5 +1,6 @@
 import { createPackageService } from './package.service'
 import { createInMemoryPackageRepository } from '@/lib/repositories/in-memory/package.repository'
+import { createInMemoryStorageChargeConfigRepository } from '@/lib/repositories/in-memory/storage-charge-config.repository'
 import { createLocker } from '@/lib/factories/locker.factory'
 import { LockerNotHeldError, HoldExpiredError, InvalidCodeError } from '@/lib/errors'
 import type { LockerService } from './locker.service'
@@ -25,7 +26,8 @@ const makeStubs = (lockerOverrides: Partial<LockerService> = {}) => {
     send: (phone, lockerNumber, code) => { notificationCalls.push({ phone, lockerNumber, code }); return Promise.resolve() },
   }
 
-  const svc = createPackageService(lockerService, packageRepo, notificationService)
+  const storageChargeConfigRepo = createInMemoryStorageChargeConfigRepository()
+  const svc = createPackageService(lockerService, packageRepo, notificationService, storageChargeConfigRepo)
   return { svc, packageRepo, notificationCalls }
 }
 

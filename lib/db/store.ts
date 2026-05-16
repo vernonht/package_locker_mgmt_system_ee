@@ -1,6 +1,7 @@
 import { createInMemoryLockerRepository } from '@/lib/repositories/in-memory/locker.repository'
 import { createInMemoryPackageRepository } from '@/lib/repositories/in-memory/package.repository'
 import { createInMemoryNotificationRepository } from '@/lib/repositories/in-memory/notification.repository'
+import { createInMemoryStorageChargeConfigRepository } from '@/lib/repositories/in-memory/storage-charge-config.repository'
 import { createLockerService } from '@/lib/services/locker.service'
 import { createPackageService } from '@/lib/services/package.service'
 import { createNotificationService } from '@/lib/services/notification.service'
@@ -27,9 +28,11 @@ const seed = () => SEED.forEach((overrides, index) => {
 
 seed()
 
+export const storageChargeConfigRepo = createInMemoryStorageChargeConfigRepository()
+
 export const lockerService       = createLockerService(lockerRepo, bestFitByVolume)
 export const notificationService = createNotificationService(notificationRepo)
-export const packageService      = createPackageService(lockerService, packageRepo, notificationService)
+export const packageService      = createPackageService(lockerService, packageRepo, notificationService, storageChargeConfigRepo)
 
 export const resetStore = () => {
   lockerMap.clear()

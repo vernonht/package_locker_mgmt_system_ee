@@ -1,5 +1,6 @@
 import { createPackageService } from './package.service'
 import { createInMemoryPackageRepository } from '@/lib/repositories/in-memory/package.repository'
+import { createInMemoryStorageChargeConfigRepository } from '@/lib/repositories/in-memory/storage-charge-config.repository'
 import { createPackage } from '@/lib/factories/package.factory'
 import { createLocker } from '@/lib/factories/locker.factory'
 import { InvalidCodeError } from '@/lib/errors'
@@ -24,7 +25,8 @@ const makeStubs = () => {
     send: () => Promise.resolve(),
   }
 
-  const svc = createPackageService(lockerService, packageRepo, notificationService)
+  const storageChargeConfigRepo = createInMemoryStorageChargeConfigRepository()
+  const svc = createPackageService(lockerService, packageRepo, notificationService, storageChargeConfigRepo)
   return { svc, packageRepo }
 }
 
@@ -95,7 +97,7 @@ test('previewPickup does NOT call setLockerAvailable', async () => {
     setLockerAvailable:  (id) => { setLockerAvailableCalls.push(id); return Promise.resolve() },
   }
 
-  const svc = createPackageService(lockerService, packageRepo, { send: () => Promise.resolve() })
+  const svc = createPackageService(lockerService, packageRepo, { send: () => Promise.resolve() }, createInMemoryStorageChargeConfigRepository())
   await packageRepo.save(createPackage({
     pickupCodeHash: hashCode(CODE),
     status: 'STORED',

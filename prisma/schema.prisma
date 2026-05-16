@@ -49,3 +49,23 @@ model NotificationLog {
 
   @@map("notification_logs")
 }
+
+model StorageChargeConfig {
+  id               String              @id @default(uuid())
+  baseAmountPerDay Float
+  tiers            StorageChargeTier[]
+  updatedAt        DateTime            @updatedAt
+
+  @@map("storage_charge_configs")
+}
+
+model StorageChargeTier {
+  id         String              @id @default(uuid())
+  configId   String
+  config     StorageChargeConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  upToDay    Int?
+  multiplier Float
+  sortOrder  Int
+
+  @@map("storage_charge_tiers")
+}

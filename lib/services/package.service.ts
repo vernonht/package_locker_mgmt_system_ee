@@ -2,10 +2,12 @@ import { createPackage } from '@/lib/factories/package.factory'
 import { generateCode, hashCode } from './code.service'
 import { calculateStorageCharge } from './storage-charge.service'
 import type { StorageChargeResult } from './storage-charge.service'
+import { defaultStorageChargeConfig } from '@/lib/config/storage-charges'
 import { InvalidCodeError } from '@/lib/errors'
 import type { LockerService } from './locker.service'
 import type { NotificationService } from './notification.service'
 import type { PackageRepository } from '@/lib/repositories/interfaces/package.repository'
+import type { StorageChargeConfigRepository } from '@/lib/repositories/interfaces/storage-charge-config.repository'
 
 export type DepositInput = {
   lockerId:       string
@@ -22,9 +24,10 @@ export type PickupResult   = { lockerId: string; lockerNumber: string }
 export type PickupPreview  = StorageChargeResult & { lockerNumber: string }
 
 export const createPackageService = (
-  lockerService:       LockerService,
-  packageRepo:         PackageRepository,
-  notificationService: NotificationService,
+  lockerService:           LockerService,
+  packageRepo:             PackageRepository,
+  notificationService:     NotificationService,
+  storageChargeConfigRepo: StorageChargeConfigRepository,
 ) => ({
   depositPackage: async (input: DepositInput): Promise<DepositResult> => {
     const { lockerId, lockerNumber, recipientName, recipientPhone, width, height, depth } = input
@@ -49,7 +52,8 @@ export const createPackageService = (
   previewPickup: async (inputCode: string, now?: Date): Promise<PickupPreview> => {
     const pkg = await packageRepo.findByCodeHash(hashCode(inputCode))
     if (!pkg || pkg.status !== 'STORED') throw new InvalidCodeError()
-    const charge = calculateStorageCharge(pkg.createdAt, now)
+    const config = await storageChargeConfigRepo.getActive() ?? defaultStorageChargeConfig
+    const charge = calculateStorageCharge(pkg.createdAt, now, config)
     return { ...charge, lockerNumber: pkg.lockerNumber ?? '' }
   },
 
