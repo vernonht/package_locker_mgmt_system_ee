@@ -2,15 +2,18 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import type { Locker } from '@/lib/models/locker'
+import { lockerApi } from '@/lib/services/api/locker.api'
 
 export function OccupancySummary() {
   const [lockers, setLockers] = useState<Locker[]>([])
 
-  const refresh = useCallback(() => {
-    fetch('/api/lockers')
-      .then(r => r.json())
-      .then(setLockers)
-      .catch(console.error)
+  const refresh = useCallback(async () => {
+    try {
+      const data = await lockerApi.fetchAll()
+      setLockers(data)
+    } catch (error) {
+      console.error(error)
+    }
   }, [])
 
   useEffect(() => {

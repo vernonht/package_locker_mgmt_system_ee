@@ -2,15 +2,18 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import type { NotificationLog as Log } from '@/lib/models/notification'
+import { notificationApi } from '@/lib/services/api/notification.api'
 
 export function NotificationLog() {
   const [logs, setLogs] = useState<Log[]>([])
 
-  const refresh = useCallback(() => {
-    fetch('/api/notifications')
-      .then(r => r.json())
-      .then((data: Log[]) => setLogs([...data].reverse()))
-      .catch(console.error)
+  const refresh = useCallback(async () => {
+    try {
+      const data = await notificationApi.fetchAll()
+      setLogs([...data].reverse())
+    } catch (error) {
+      console.error(error)
+    }
   }, [])
 
   useEffect(() => {
