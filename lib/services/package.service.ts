@@ -15,7 +15,7 @@ export type DepositInput = {
   depth:          number
 }
 
-export type DepositResult = { pickupCode: string }
+export type DepositResult = { lockerId: string; lockerNumber: string }
 export type PickupResult = { lockerId: string; lockerNumber: string }
 
 export const createPackageService = (
@@ -43,7 +43,7 @@ export const createPackageService = (
     packageRepo.save(pkg)
     notificationService.send(recipientPhone, lockerNumber, pickupCode)
 
-    return { pickupCode }
+    return { lockerId, lockerNumber }
   },
 
   pickupPackage: (inputCode: string): PickupResult => {

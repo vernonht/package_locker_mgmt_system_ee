@@ -34,7 +34,6 @@ export function DepositForm() {
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [hold, setHold] = useState<Step1Result | null>(null)
-  const [pickupCode, setPickupCode] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -58,7 +57,7 @@ export function DepositForm() {
     setError('')
     setLoading(true)
     try {
-      const data = await packageApi.deposit({
+      await packageApi.deposit({
         lockerId: hold!.lockerId,
         lockerNumber: hold!.lockerNumber,
         recipientName: name,
@@ -67,7 +66,6 @@ export function DepositForm() {
         height: Number(height),
         depth: Number(depth),
       })
-      setPickupCode(data.pickupCode)
       setStep('done')
     } catch (err: any) {
       const msg = err.message || 'Something went wrong'
@@ -79,8 +77,14 @@ export function DepositForm() {
   }
 
   const reset = () => {
-    setStep('reserve'); setHold(null); setPickupCode(''); setError('')
-    setWidth(''); setHeight(''); setDepth(''); setName(''); setPhone('')
+    setStep('reserve')
+    setHold(null)
+    setError('')
+    setWidth('')
+    setHeight('')
+    setDepth('')
+    setName('')
+    setPhone('')
   }
 
   if (step === 'done') {
@@ -88,10 +92,6 @@ export function DepositForm() {
       <div className="text-center space-y-4 py-6">
         <p className="text-green-700 font-semibold">Package deposited successfully!</p>
         <p className="text-gray-600 text-sm">SMS sent to {phone}</p>
-        <div className="inline-block bg-gray-900 text-white text-3xl font-mono tracking-widest px-6 py-4 rounded-xl">
-          {pickupCode}
-        </div>
-        <p className="text-xs text-gray-500">Share this code with the recipient</p>
         <button onClick={reset} className="mt-4 text-blue-600 hover:underline text-sm">Deposit another package</button>
       </div>
     )

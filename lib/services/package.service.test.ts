@@ -39,29 +39,26 @@ const validInput = {
   depth:          15,
 }
 
-test('depositPackage returns a 6-char pickup code on success', () => {
+test('depositPackage returns the lockerId', () => {
   const { svc } = makeStubs()
   const result = svc.depositPackage(validInput)
-  expect(result.pickupCode).toMatch(/^[0-9A-F]{6}$/)
+  expect(result.lockerId).toBe('locker-1')
 })
 
 test('depositPackage saves the package as STORED', () => {
-  const { svc, packageRepo } = makeStubs()
+  const { svc, packageRepo, notificationCalls } = makeStubs()
   svc.depositPackage(validInput)
-  const pkgs = packageRepo.findByCodeHash
-  // verify at least one package was stored by searching via code hash
-  const result = svc.depositPackage(validInput)
-  const pkg = packageRepo.findByCodeHash(hashCode(result.pickupCode))
+  const pkg = packageRepo.findByCodeHash(hashCode(notificationCalls[0].code))
   expect(pkg?.status).toBe('STORED')
 })
 
 test('depositPackage calls notificationService.send with correct args', () => {
   const { svc, notificationCalls } = makeStubs()
-  const result = svc.depositPackage(validInput)
+  svc.depositPackage(validInput)
   expect(notificationCalls).toHaveLength(1)
   expect(notificationCalls[0].phone).toBe('+60123456789')
   expect(notificationCalls[0].lockerNumber).toBe('L-001')
-  expect(notificationCalls[0].code).toBe(result.pickupCode)
+  expect(notificationCalls[0].code).toMatch(/^[0-9A-F]{6}$/)
 })
 
 test('depositPackage propagates LockerNotHeldError from lockerService', () => {
@@ -80,11 +77,12 @@ test('depositPackage propagates HoldExpiredError from lockerService', () => {
 
 test('pickupPackage marks package RETRIEVED and locker AVAILABLE', () => {
   const setLockerAvailableCalls: string[] = []
-  const { svc, packageRepo } = makeStubs({
+  const { svc, packageRepo, notificationCalls } = makeStubs({
     setLockerAvailable: (id) => { setLockerAvailableCalls.push(id) },
   })
 
-  const { pickupCode } = svc.depositPackage(validInput)
+  svc.depositPackage(validInput)
+  const pickupCode = notificationCalls[0].code
   const result = svc.pickupPackage(pickupCode)
 
   const pkg = packageRepo.findByCodeHash(hashCode(pickupCode))
@@ -102,8 +100,9 @@ test('pickupPackage throws InvalidCodeError for wrong code', () => {
 })
 
 test('pickupPackage throws InvalidCodeError if already RETRIEVED', () => {
-  const { svc } = makeStubs()
-  const { pickupCode } = svc.depositPackage(validInput)
+  const { svc, notificationCalls } = makeStubs()
+  svc.depositPackage(validInput)
+  const pickupCode = notificationCalls[0].code
   svc.pickupPackage(pickupCode)
   expect(() => svc.pickupPackage(pickupCode)).toThrow(InvalidCodeError)
 })
