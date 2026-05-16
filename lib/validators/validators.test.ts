@@ -61,16 +61,24 @@ test('depositSchema rejects empty recipientName', () => {
 
 // --- pickupSchema ---
 
-test('pickupSchema accepts a 6-char code', () => {
-  const result = pickupSchema.safeParse({ pickupCode: 'A3F9C1' })
+test('pickupSchema accepts a 6-char code with locker number', () => {
+  const result = pickupSchema.safeParse({ pickupCode: 'A3F9C1', lockerNumber: 'L-001' })
   expect(result.success).toBe(true)
 })
 
 test('pickupSchema rejects codes that are not 6 chars', () => {
-  expect(pickupSchema.safeParse({ pickupCode: 'ABC' }).success).toBe(false)
-  expect(pickupSchema.safeParse({ pickupCode: 'TOOLONG' }).success).toBe(false)
+  expect(pickupSchema.safeParse({ pickupCode: 'ABC', lockerNumber: 'L-001' }).success).toBe(false)
+  expect(pickupSchema.safeParse({ pickupCode: 'TOOLONG', lockerNumber: 'L-001' }).success).toBe(false)
 })
 
 test('pickupSchema rejects missing pickupCode', () => {
   expect(pickupSchema.safeParse({}).success).toBe(false)
+})
+
+test('pickupSchema rejects missing lockerNumber', () => {
+  expect(pickupSchema.safeParse({ pickupCode: 'A3F9C1' }).success).toBe(false)
+})
+
+test('pickupSchema rejects empty lockerNumber', () => {
+  expect(pickupSchema.safeParse({ pickupCode: 'A3F9C1', lockerNumber: '' }).success).toBe(false)
 })

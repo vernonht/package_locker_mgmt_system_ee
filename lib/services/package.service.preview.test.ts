@@ -44,7 +44,7 @@ test('previewPickup returns charge and lockerNumber for a STORED package', async
     createdAt,
   }))
 
-  const preview = await svc.previewPickup(CODE, now)
+  const preview = await svc.previewPickup(CODE, 'L-001', now)
 
   expect(preview.days).toBe(3)
   expect(preview.totalCharge).toBe(1.50)  // 3 days × $0.50
@@ -54,7 +54,7 @@ test('previewPickup returns charge and lockerNumber for a STORED package', async
 
 test('previewPickup throws InvalidCodeError for unknown code', async () => {
   const { svc } = makeStubs()
-  await expect(svc.previewPickup('FFFFFF')).rejects.toThrow(InvalidCodeError)
+  await expect(svc.previewPickup('FFFFFF', 'L-001')).rejects.toThrow(InvalidCodeError)
 })
 
 test('previewPickup throws InvalidCodeError for RETRIEVED package', async () => {
@@ -66,7 +66,7 @@ test('previewPickup throws InvalidCodeError for RETRIEVED package', async () => 
     lockerNumber: 'L-001',
   }))
 
-  await expect(svc.previewPickup(CODE)).rejects.toThrow(InvalidCodeError)
+  await expect(svc.previewPickup(CODE, 'L-001')).rejects.toThrow(InvalidCodeError)
 })
 
 test('previewPickup does NOT change package status', async () => {
@@ -78,7 +78,7 @@ test('previewPickup does NOT change package status', async () => {
     lockerNumber: 'L-001',
   }))
 
-  await svc.previewPickup(CODE)
+  await svc.previewPickup(CODE, 'L-001')
 
   const pkg = await packageRepo.findByCodeHash(hashCode(CODE))
   expect(pkg?.status).toBe('STORED')
@@ -105,9 +105,21 @@ test('previewPickup does NOT call setLockerAvailable', async () => {
     lockerNumber: 'L-001',
   }))
 
-  await svc.previewPickup(CODE)
+  await svc.previewPickup(CODE, 'L-001')
 
   expect(setLockerAvailableCalls).toHaveLength(0)
+})
+
+test('previewPickup throws InvalidCodeError for wrong locker number', async () => {
+  const { svc, packageRepo } = makeStubs()
+  await packageRepo.save(createPackage({
+    pickupCodeHash: hashCode(CODE),
+    status: 'STORED',
+    lockerId: 'locker-1',
+    lockerNumber: 'L-001',
+  }))
+
+  await expect(svc.previewPickup(CODE, 'L-999')).rejects.toThrow(InvalidCodeError)
 })
 
 test('previewPickup minimum 1 day charge for newly stored package', async () => {
@@ -120,7 +132,7 @@ test('previewPickup minimum 1 day charge for newly stored package', async () => 
     createdAt: new Date(),  // just now
   }))
 
-  const preview = await svc.previewPickup(CODE)
+  const preview = await svc.previewPickup(CODE, 'L-001')
 
   expect(preview.days).toBe(1)
   expect(preview.totalCharge).toBe(0.50)

@@ -49,17 +49,17 @@ export const createPackageService = (
     return { lockerId, lockerNumber }
   },
 
-  previewPickup: async (inputCode: string, now?: Date): Promise<PickupPreview> => {
+  previewPickup: async (inputCode: string, lockerNumber: string, now?: Date): Promise<PickupPreview> => {
     const pkg = await packageRepo.findByCodeHash(hashCode(inputCode))
-    if (!pkg || pkg.status !== 'STORED') throw new InvalidCodeError()
+    if (!pkg || pkg.status !== 'STORED' || pkg.lockerNumber !== lockerNumber) throw new InvalidCodeError()
     const config = await storageChargeConfigRepo.getActive() ?? defaultStorageChargeConfig
     const charge = calculateStorageCharge(pkg.createdAt, now, config)
     return { ...charge, lockerNumber: pkg.lockerNumber ?? '' }
   },
 
-  pickupPackage: async (inputCode: string): Promise<PickupResult> => {
+  pickupPackage: async (inputCode: string, lockerNumber: string): Promise<PickupResult> => {
     const pkg = await packageRepo.findByCodeHash(hashCode(inputCode))
-    if (!pkg || pkg.status !== 'STORED') throw new InvalidCodeError()
+    if (!pkg || pkg.status !== 'STORED' || pkg.lockerNumber !== lockerNumber) throw new InvalidCodeError()
 
     const lockers = await lockerService.getAllLockers()
     const locker  = lockers.find(l => l.id === pkg.lockerId)

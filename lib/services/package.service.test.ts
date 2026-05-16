@@ -85,7 +85,7 @@ test('pickupPackage marks package RETRIEVED and locker AVAILABLE', async () => {
 
   await svc.depositPackage(validInput)
   const pickupCode = notificationCalls[0].code
-  const result = await svc.pickupPackage(pickupCode)
+  const result = await svc.pickupPackage(pickupCode, 'L-001')
 
   const pkg = await packageRepo.findByCodeHash(hashCode(pickupCode))
   expect(pkg?.status).toBe('RETRIEVED')
@@ -98,13 +98,20 @@ test('pickupPackage marks package RETRIEVED and locker AVAILABLE', async () => {
 test('pickupPackage throws InvalidCodeError for wrong code', async () => {
   const { svc } = makeStubs()
   await svc.depositPackage(validInput)
-  await expect(svc.pickupPackage('WRONG1')).rejects.toThrow(InvalidCodeError)
+  await expect(svc.pickupPackage('WRONG1', 'L-001')).rejects.toThrow(InvalidCodeError)
+})
+
+test('pickupPackage throws InvalidCodeError for wrong locker number', async () => {
+  const { svc, notificationCalls } = makeStubs()
+  await svc.depositPackage(validInput)
+  const pickupCode = notificationCalls[0].code
+  await expect(svc.pickupPackage(pickupCode, 'L-999')).rejects.toThrow(InvalidCodeError)
 })
 
 test('pickupPackage throws InvalidCodeError if already RETRIEVED', async () => {
   const { svc, notificationCalls } = makeStubs()
   await svc.depositPackage(validInput)
   const pickupCode = notificationCalls[0].code
-  await svc.pickupPackage(pickupCode)
-  await expect(svc.pickupPackage(pickupCode)).rejects.toThrow(InvalidCodeError)
+  await svc.pickupPackage(pickupCode, 'L-001')
+  await expect(svc.pickupPackage(pickupCode, 'L-001')).rejects.toThrow(InvalidCodeError)
 })

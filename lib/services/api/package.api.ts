@@ -41,27 +41,27 @@ export const packageApi = {
     return res.json()
   },
 
-  previewPickup: async (pickupCode: string): Promise<PickupPreview> => {
+  previewPickup: async (pickupCode: string, lockerNumber: string): Promise<PickupPreview> => {
     const res = await fetch('/api/packages/pickup/preview', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pickupCode }),
+      body: JSON.stringify({ pickupCode, lockerNumber }),
     })
 
-    if (res.status === 404) throw new Error('Invalid or already-used code. Please check your notification.')
+    if (res.status === 404) throw new Error('Invalid locker number or pickup code. Please check your notification.')
     if (!res.ok) throw new Error('Something went wrong. Please try again.')
 
     return res.json()
   },
 
-  pickup: async (pickupCode: string): Promise<{ lockerId: string; lockerNumber: string }> => {
+  pickup: async (pickupCode: string, lockerNumber: string): Promise<{ lockerId: string; lockerNumber: string }> => {
     const res = await fetch('/api/packages/pickup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pickupCode }),
+      body: JSON.stringify({ pickupCode, lockerNumber }),
     })
 
-    if (res.status === 404) throw new Error('Invalid or already-used code. Please check your notification.')
+    if (res.status === 404) throw new Error('Invalid locker number or pickup code. Please check your notification.')
     if (!res.ok) throw new Error('Something went wrong. Please try again.')
 
     return res.json()

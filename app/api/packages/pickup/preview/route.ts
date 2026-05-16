@@ -9,7 +9,7 @@ export const POST = async (req: Request) => {
   if (!parsed.success) return Response.json({ error: treeifyError(parsed.error) }, { status: 400 })
 
   try {
-    const preview = await packageService.previewPickup(parsed.data.pickupCode)
+    const preview = await packageService.previewPickup(parsed.data.pickupCode, parsed.data.lockerNumber)
     return Response.json(preview)
   } catch (err) {
     return handleError(err)

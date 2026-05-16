@@ -9,7 +9,7 @@ export const POST = async (req: Request) => {
   if (!parsed.success) return Response.json({ error: treeifyError(parsed.error) }, { status: 400 })
 
   try {
-    const result = await packageService.pickupPackage(parsed.data.pickupCode)
+    const result = await packageService.pickupPackage(parsed.data.pickupCode, parsed.data.lockerNumber)
     return Response.json({ ...result, message: 'Package retrieved successfully' })
   } catch (err) {
     return handleError(err)
