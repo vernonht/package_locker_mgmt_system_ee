@@ -36,6 +36,17 @@ export const packageApi = {
 
     if (res.status === 409) throw new Error('Hold no longer valid. Please reserve a locker again.')
     if (res.status === 410) throw new Error('Hold expired (10 min limit). Please reserve a locker again.')
+    if (res.status === 400) {
+      const data = await res.json()
+      const errors = data.error.properties || {}
+      if (errors.recipientName) {
+        throw new Error('Invalid recipient name. Please check your entries and try again.')
+      }
+      if (errors.recipientPhone) {
+        throw new Error('Invalid recipient phone. Please check your entries and try again.')
+      }
+      throw new Error(data.message || 'Invalid input. Please check your entries and try again.')
+    }
     if (!res.ok) throw new Error('Something went wrong. Please try again.')
 
     return res.json()

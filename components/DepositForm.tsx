@@ -80,7 +80,9 @@ export function DepositForm() {
 
   const reset = async(release: boolean = false) => {
     if (release && hold) {
+      setLoading(true)
       await lockerApi.release(hold.lockerId)
+      setLoading(false)
     }
     setStep('reserve')
     setHold(null)
@@ -133,7 +135,7 @@ export function DepositForm() {
           <Field label="Recipient Phone" name="phone" value={phone} onChange={setPhone} placeholder="+60123456789" />
           {error && <p className="text-red-600 text-sm">{error}</p>}
           <div className="flex gap-3">
-            <button type="button" onClick={() => reset(true)} className="flex-1 border border-gray-300 py-2 rounded-md text-sm">
+            <button type="button" disabled={loading} onClick={() => reset(true)} className="flex-1 border border-gray-300 py-2 rounded-md text-sm">
               {COMMON_LABELS.CANCEL}
             </button>
             <button
