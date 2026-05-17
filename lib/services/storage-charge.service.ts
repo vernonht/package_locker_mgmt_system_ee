@@ -20,7 +20,17 @@ export const calculateStorageCharge = (
   now: Date = new Date(),
   config: StorageChargeConfig = defaultStorageChargeConfig,
 ): StorageChargeResult => {
-  const MS_PER_DAY = 24 * 60 * 60 * 1000
+  const MS_PER_DAY = 24 * 60 * 60 * 1000 // milliseconds in a day
+
+  // --------------------------------------------------------------------------
+  // demo for free first day: if less than 24 hours, return zero charge
+  // --------------------------------------------------------------------------
+  // const isMoreADay = now.getTime() - createdAt.getTime() >= MS_PER_DAY
+  // // If less than one day, return free
+  // if (!isMoreADay) {
+  //   return { days: 0, totalCharge: 0, breakdown: [], config }
+  // }
+
   const days = Math.max(1, Math.ceil((now.getTime() - createdAt.getTime()) / MS_PER_DAY)) // round up to nearest day
 
   const breakdown: TierBreakdown[] = []
