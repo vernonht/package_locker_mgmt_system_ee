@@ -107,6 +107,8 @@ prisma/
 | Two-factor pickup (code + locker number) | Reduces brute-force risk | Extra step for the customer |
 | Console-only notification providers | No external credentials needed to run locally | Nothing is actually sent |
 | No authentication | Simple to run and demonstrate | Any user can access any page |
+| Expired holds released lazily, not by cron | No infrastructure dependency (no scheduler, no worker) | A locker stuck in HOLD is invisible to customers until the next hold request triggers `releaseExpiredHolds()`. Under low traffic, expired holds can block capacity for up to 10 minutes past their TTL. |
+| Polling instead of WebSocket for `/api/lockers` and `/api/notifications` | Stateless HTTP — no persistent connection management, works behind any CDN or load balancer, zero extra infrastructure | The admin dashboard and locker grid re-fetch every 5 seconds regardless of whether anything changed. Under high locker volume or many concurrent admin sessions this generates unnecessary load. A WebSocket or SSE channel would push updates only on state changes, but requires a stateful server or a pub/sub broker. |
 
 ---
 
