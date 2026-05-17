@@ -3,20 +3,16 @@
 import { useEffect, useState, useCallback } from 'react'
 import { lockerApi } from '@/lib/services/api/locker.api'
 import type { Locker } from '@/lib/models/locker'
-
-const STATUS_STYLES: Record<string, string> = {
-  AVAILABLE: 'bg-green-100  border-green-400  text-green-800',
-  HOLD: 'bg-blue-100   border-blue-400   text-blue-800',
-  OCCUPIED: 'bg-amber-100  border-amber-400  text-amber-800',
-  OUT_OF_ORDER: 'bg-red-100    border-red-400    text-red-800',
-}
+import { POLLING_INTERVAL_MS } from '@/constants/app.constants'
+import { HOLD_DURATION_MS, LOCKER_STATUS_STYLES } from '@/constants/locker.constants'
+import { COMMON_LABELS } from '@/constants/messages.constants'
 
 function HoldTimer({ heldAt }: { heldAt: string }) {
   const [remaining, setRemaining] = useState('')
 
   useEffect(() => {
     const tick = () => {
-      const ms = 10 * 60 * 1000 - (Date.now() - new Date(heldAt).getTime())
+      const ms = HOLD_DURATION_MS - (Date.now() - new Date(heldAt).getTime())
       if (ms <= 0) { setRemaining('expired'); return }
       const m = Math.floor(ms / 60000)
       const s = Math.floor((ms % 60000) / 1000)
@@ -47,7 +43,7 @@ export function LockerGrid({ refreshTrigger = 0 }: Props) {
 
   useEffect(() => {
     refresh()
-    const id = setInterval(refresh, 5000)
+    const id = setInterval(refresh, POLLING_INTERVAL_MS)
     return () => clearInterval(id)
   }, [refresh])
 
@@ -59,13 +55,13 @@ export function LockerGrid({ refreshTrigger = 0 }: Props) {
     <div>
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-semibold text-gray-700">Locker Status</h2>
-        <button onClick={refresh} className="text-xs text-blue-600 hover:underline">Refresh</button>
+        <button onClick={refresh} className="text-xs text-blue-600 hover:underline">{COMMON_LABELS.REFRESH}</button>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {lockers.map(l => (
           <div
             key={l.id}
-            className={`border rounded-lg p-3 text-sm ${STATUS_STYLES[l.status] ?? 'bg-gray-100'}`}
+            className={`border rounded-lg p-3 text-sm ${LOCKER_STATUS_STYLES[l.status] ?? 'bg-gray-100'}`}
           >
             <div className="text-xs font-mono opacity-75 mb-1">{l.lockerNumber}</div>
             <div className="flex items-center justify-between mb-1">

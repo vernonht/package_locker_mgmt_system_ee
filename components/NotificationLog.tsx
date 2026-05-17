@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import type { NotificationLog as Log } from '@/lib/models/notification'
 import { notificationApi } from '@/lib/services/api/notification.api'
+import { POLLING_INTERVAL_MS } from '@/constants/app.constants'
+import { COMMON_LABELS } from '@/constants/messages.constants'
 
 export function NotificationLog() {
   const [logs, setLogs] = useState<Log[]>([])
@@ -18,7 +20,7 @@ export function NotificationLog() {
 
   useEffect(() => {
     refresh()
-    const id = setInterval(refresh, 5000)
+    const id = setInterval(refresh, POLLING_INTERVAL_MS)
     return () => clearInterval(id)
   }, [refresh])
 
@@ -26,7 +28,7 @@ export function NotificationLog() {
     <div>
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-semibold text-gray-700">Notification Log</h2>
-        <button onClick={refresh} className="text-xs text-blue-600 hover:underline">Refresh</button>
+        <button onClick={refresh} className="text-xs text-blue-600 hover:underline">{COMMON_LABELS.REFRESH}</button>
       </div>
 
       {logs.length === 0 ? (

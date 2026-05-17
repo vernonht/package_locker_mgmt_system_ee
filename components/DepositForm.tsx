@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { lockerApi } from '@/lib/services/api/locker.api'
 import { packageApi } from '@/lib/services/api/package.api'
+import { COMMON_LABELS, ERROR_MESSAGES } from '@/constants/messages.constants'
 
 type Step1Result = { lockerId: string; lockerNumber: string; lockerSize: string; holdExpiresAt: string }
 type Step = 'reserve' | 'confirm' | 'done'
@@ -46,7 +47,7 @@ export function DepositForm() {
       setHold(data)
       setStep('confirm')
     } catch (err: any) {
-      setError(err.message || 'Something went wrong')
+      setError(err.message || ERROR_MESSAGES.SOMETHING_WENT_WRONG)
     } finally {
       setLoading(false)
     }
@@ -68,7 +69,7 @@ export function DepositForm() {
       })
       setStep('done')
     } catch (err: any) {
-      const msg = err.message || 'Something went wrong'
+      const msg = err.message || ERROR_MESSAGES.SOMETHING_WENT_WRONG
       setError(msg)
       if (msg.includes('expired')) setStep('reserve')
     } finally {
@@ -130,7 +131,7 @@ export function DepositForm() {
           {error && <p className="text-red-600 text-sm">{error}</p>}
           <div className="flex gap-3">
             <button type="button" onClick={reset} className="flex-1 border border-gray-300 py-2 rounded-md text-sm">
-              Cancel
+              {COMMON_LABELS.CANCEL}
             </button>
             <button
               type="submit" disabled={loading}

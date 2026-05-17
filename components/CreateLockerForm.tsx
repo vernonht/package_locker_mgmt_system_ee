@@ -3,28 +3,24 @@
 import { useState } from 'react'
 import { lockerApi } from '@/lib/services/api/locker.api'
 import type { LockerSize } from '@/lib/models/locker'
-
-const SIZE_PRESETS: Record<LockerSize, { maxWidth: number; maxHeight: number; maxDepth: number }> = {
-  SMALL:  { maxWidth: 30, maxHeight: 30, maxDepth: 40  },
-  MEDIUM: { maxWidth: 50, maxHeight: 50, maxDepth: 60  },
-  LARGE:  { maxWidth: 80, maxHeight: 80, maxDepth: 100 },
-}
+import { LOCKER_SIZE_PRESETS } from '@/constants/locker.constants'
+import { COMMON_LABELS, ERROR_MESSAGES } from '@/constants/messages.constants'
 
 type Props = { onCreated?: () => void }
 
 export function CreateLockerForm({ onCreated }: Props) {
   const [open, setOpen]         = useState(false)
   const [size, setSize]         = useState<LockerSize>('SMALL')
-  const [maxWidth, setMaxWidth]   = useState(SIZE_PRESETS.SMALL.maxWidth)
-  const [maxHeight, setMaxHeight] = useState(SIZE_PRESETS.SMALL.maxHeight)
-  const [maxDepth, setMaxDepth]   = useState(SIZE_PRESETS.SMALL.maxDepth)
+  const [maxWidth, setMaxWidth]   = useState(LOCKER_SIZE_PRESETS.SMALL.maxWidth)
+  const [maxHeight, setMaxHeight] = useState(LOCKER_SIZE_PRESETS.SMALL.maxHeight)
+  const [maxDepth, setMaxDepth]   = useState(LOCKER_SIZE_PRESETS.SMALL.maxDepth)
   const [loading, setLoading]   = useState(false)
   const [errMsg, setErrMsg]     = useState('')
   const [success, setSuccess]   = useState('')
 
   const applyPreset = (s: LockerSize) => {
     setSize(s)
-    const p = SIZE_PRESETS[s]
+    const p = LOCKER_SIZE_PRESETS[s]
     setMaxWidth(p.maxWidth)
     setMaxHeight(p.maxHeight)
     setMaxDepth(p.maxDepth)
@@ -41,7 +37,7 @@ export function CreateLockerForm({ onCreated }: Props) {
       applyPreset('SMALL')
       onCreated?.()
     } catch (err: unknown) {
-      setErrMsg(err instanceof Error ? err.message : 'Failed to create locker.')
+      setErrMsg(err instanceof Error ? err.message : ERROR_MESSAGES.CREATE_LOCKER_FAILED)
     } finally {
       setLoading(false)
     }
@@ -55,7 +51,7 @@ export function CreateLockerForm({ onCreated }: Props) {
           onClick={() => { setOpen(o => !o); setErrMsg(''); setSuccess('') }}
           className="text-xs text-blue-600 hover:underline"
         >
-          {open ? 'Cancel' : '+ New Locker'}
+          {open ? COMMON_LABELS.CANCEL : '+ New Locker'}
         </button>
       </div>
 

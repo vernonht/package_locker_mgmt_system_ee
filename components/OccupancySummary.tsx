@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import type { Locker } from '@/lib/models/locker'
 import { lockerApi } from '@/lib/services/api/locker.api'
+import { POLLING_INTERVAL_MS } from '@/constants/app.constants'
 
 export function OccupancySummary() {
   const [lockers, setLockers] = useState<Locker[]>([])
@@ -18,7 +19,7 @@ export function OccupancySummary() {
 
   useEffect(() => {
     refresh()
-    const id = setInterval(refresh, 5000)
+    const id = setInterval(refresh, POLLING_INTERVAL_MS)
     return () => clearInterval(id)
   }, [refresh])
 

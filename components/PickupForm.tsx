@@ -2,11 +2,12 @@
 
 import { useState } from 'react'
 import { packageApi, type PickupPreview } from '@/lib/services/api/package.api'
+import { COMMON_LABELS, ERROR_MESSAGES, PICKUP_STEPS } from '@/constants/messages.constants'
 
-type Step = 'enter-code' | 'charge-screen' | 'locker-open'
+type Step = (typeof PICKUP_STEPS)[keyof typeof PICKUP_STEPS]
 
 export function PickupForm() {
-  const [step, setStep] = useState<Step>('enter-code')
+  const [step, setStep] = useState<Step>(PICKUP_STEPS.ENTER_CODE)
   const [code, setCode] = useState('')
   const [lockerInput, setLockerInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -17,7 +18,7 @@ export function PickupForm() {
   const reset = () => {
     setCode('')
     setLockerInput('')
-    setStep('enter-code')
+    setStep(PICKUP_STEPS.ENTER_CODE)
     setErrMsg('')
     setPreview(null)
     setLockerNumber('')
@@ -31,14 +32,14 @@ export function PickupForm() {
       const result = await packageApi.previewPickup(code.toUpperCase(), lockerInput.toUpperCase())
       if (result.totalCharge > 0) {
         setPreview(result)
-        setStep('charge-screen')
+        setStep(PICKUP_STEPS.CHARGE_SCREEN)
       } else {
         const pickupResult = await packageApi.pickup(code.toUpperCase(), lockerInput.toUpperCase())
         setLockerNumber(pickupResult.lockerNumber)
-        setStep('locker-open')
+        setStep(PICKUP_STEPS.LOCKER_OPEN)
       }
     } catch (err: unknown) {
-      setErrMsg(err instanceof Error ? err.message : 'Invalid locker number or pickup code.')
+      setErrMsg(err instanceof Error ? err.message : ERROR_MESSAGES.INVALID_LOCKER_OR_PICKUP_CODE)
     } finally {
       setLoading(false)
     }
@@ -50,9 +51,9 @@ export function PickupForm() {
     try {
       const result = await packageApi.pickup(code.toUpperCase(), lockerInput.toUpperCase())
       setLockerNumber(result.lockerNumber)
-      setStep('locker-open')
+      setStep(PICKUP_STEPS.LOCKER_OPEN)
     } catch (err: unknown) {
-      setErrMsg(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
+      setErrMsg(err instanceof Error ? err.message : ERROR_MESSAGES.SOMETHING_WENT_WRONG_RETRY)
     } finally {
       setLoading(false)
     }
@@ -66,7 +67,7 @@ export function PickupForm() {
     setLockerInput(e.target.value.toUpperCase())
   }
 
-  if (step === 'locker-open') {
+  if (step === PICKUP_STEPS.LOCKER_OPEN) {
     return (
       <div className="text-center space-y-4 py-8">
         <div className="text-5xl">✓</div>
@@ -84,7 +85,7 @@ export function PickupForm() {
     )
   }
 
-  if (step === 'charge-screen' && preview) {
+  if (step === PICKUP_STEPS.CHARGE_SCREEN && preview) {
     return (
       <div className="space-y-6">
         <div className="text-center space-y-1">
@@ -140,7 +141,7 @@ export function PickupForm() {
             disabled={loading}
             className="w-full text-gray-500 hover:text-gray-700 text-sm"
           >
-            Cancel
+            {COMMON_LABELS.CANCEL}
           </button>
         </div>
       </div>
