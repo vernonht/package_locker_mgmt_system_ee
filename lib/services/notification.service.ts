@@ -1,14 +1,8 @@
-import { randomUUID } from 'crypto'
-import type { NotificationRepository } from '@/lib/repositories/interfaces/notification.repository'
+// Barrel export for backward compatibility
+export { createNotificationService, type NotificationService } from '@/lib/services/notification/notification.service'
+export type { NotificationProvider } from '@/lib/services/notification/notification.provider'
 
-export type NotificationService = {
-  send(phone: string, lockerNumber: string, code: string): Promise<void>
-}
-
-export const createNotificationService = (repo: NotificationRepository): NotificationService => ({
-  send: async (phone: string, lockerNumber: string, code: string) => {
-    const message = `SMS → ${phone}: Your package is in Locker ${lockerNumber}. Code: ${code}`
-    console.log(message)
-    await repo.save({ id: randomUUID(), recipientPhone: phone, lockerNumber, message, sentAt: new Date() })
-  },
-})
+// Export providers for convenience
+export { smsProvider } from '@/lib/services/notification/providers/sms.provider'
+export { emailProvider } from '@/lib/services/notification/providers/email.provider'
+export { whatsappProvider } from '@/lib/services/notification/providers/whatsapp.provider'

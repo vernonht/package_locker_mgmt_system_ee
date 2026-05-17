@@ -5,7 +5,7 @@ import { createPrismaNotificationRepository } from '@/lib/repositories/prisma/no
 import { createPrismaStorageChargeConfigRepository } from '@/lib/repositories/prisma/storage-charge-config.repository'
 import { createLockerService } from '@/lib/services/locker.service'
 import { createPackageService } from '@/lib/services/package.service'
-import { createNotificationService } from '@/lib/services/notification.service'
+import { createNotificationService, emailProvider, smsProvider, whatsappProvider } from '@/lib/services/notification.service'
 import { bestFitByVolume } from '@/lib/strategies/best-fit.strategy'
 
 export const lockerRepo             = createPrismaLockerRepository(prisma)
@@ -14,5 +14,5 @@ export const notificationRepo       = createPrismaNotificationRepository(prisma)
 export const storageChargeConfigRepo = createPrismaStorageChargeConfigRepository(prisma)
 
 export const lockerService       = createLockerService(lockerRepo, bestFitByVolume)
-export const notificationService = createNotificationService(notificationRepo)
+export const notificationService = createNotificationService(notificationRepo, [smsProvider, emailProvider, whatsappProvider])
 export const packageService      = createPackageService(lockerService, packageRepo, notificationService, storageChargeConfigRepo)

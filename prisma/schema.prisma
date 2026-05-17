@@ -44,6 +44,8 @@ model NotificationLog {
   id             String   @id @default(uuid())
   recipientPhone String
   lockerNumber   String
+  code           String
+  provider       String
   message        String
   sentAt         DateTime @default(now())
 

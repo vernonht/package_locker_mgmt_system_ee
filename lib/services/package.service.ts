@@ -44,7 +44,7 @@ export const createPackageService = (
 
     await lockerService.confirmOccupied(lockerId, pkg.id)
     await packageRepo.save(pkg)
-    await notificationService.send(recipientPhone, lockerNumber, pickupCode)
+    await notificationService.send(recipientPhone, lockerNumber, pickupCode) // add 4th argument for provider selection in future
 
     return { lockerId, lockerNumber }
   },
