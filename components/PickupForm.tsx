@@ -95,9 +95,9 @@ export function PickupForm() {
           </p>
         </div>
 
-        <div className="border rounded-xl overflow-hidden">
+        <div className="border border-gray-400 rounded overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
+            <thead className="bg-gray-50 text-gray-500 uppercase text-xs border-b border-gray-400">
               <tr>
                 <th className="px-4 py-2 text-left">Period</th>
                 <th className="px-4 py-2 text-right">Rate/day</th>
@@ -115,7 +115,7 @@ export function PickupForm() {
                 </tr>
               ))}
             </tbody>
-            <tfoot className="bg-gray-50">
+            <tfoot className="bg-gray-50 border-t border-gray-400">
               <tr>
                 <td colSpan={3} className="px-4 py-3 text-right font-semibold text-gray-900">Total</td>
                 <td className="px-4 py-3 text-right font-bold text-gray-900 text-base">

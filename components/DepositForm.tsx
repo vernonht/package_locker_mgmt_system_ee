@@ -77,8 +77,10 @@ export function DepositForm() {
     }
   }
 
-  const reset = async() => {
-    await lockerApi.release(hold!.lockerId)
+  const reset = async(release: boolean = false) => {
+    if (release && hold) {
+      await lockerApi.release(hold.lockerId)
+    }
     setStep('reserve')
     setHold(null)
     setError('')
@@ -94,7 +96,7 @@ export function DepositForm() {
       <div className="text-center space-y-4 py-6">
         <p className="text-green-700 font-semibold">Package deposited successfully!</p>
         <p className="text-gray-600 text-sm">SMS sent to {phone}</p>
-        <button onClick={reset} className="mt-4 text-blue-600 hover:underline text-sm">Deposit another package</button>
+        <button onClick={() => reset(false)} className="mt-4 text-blue-600 hover:underline text-sm">Deposit another package</button>
       </div>
     )
   }
@@ -130,7 +132,7 @@ export function DepositForm() {
           <Field label="Recipient Phone" name="phone" value={phone} onChange={setPhone} placeholder="+60123456789" />
           {error && <p className="text-red-600 text-sm">{error}</p>}
           <div className="flex gap-3">
-            <button type="button" onClick={reset} className="flex-1 border border-gray-300 py-2 rounded-md text-sm">
+            <button type="button" onClick={() => reset(true)} className="flex-1 border border-gray-300 py-2 rounded-md text-sm">
               {COMMON_LABELS.CANCEL}
             </button>
             <button

@@ -40,6 +40,8 @@ export function NotificationLog() {
               <tr className="border-b text-gray-500 text-xs uppercase tracking-wide">
                 <th className="pb-2 pr-4">Phone</th>
                 <th className="pb-2 pr-4">Locker</th>
+                <th className="pb-2 pr-4">Code</th>
+                <th className="pb-2 pr-4">Provider</th>
                 <th className="pb-2 pr-4">Sent At</th>
                 <th className="pb-2">Message</th>
               </tr>
@@ -49,6 +51,8 @@ export function NotificationLog() {
                 <tr key={log.id} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="py-2 pr-4 font-mono text-xs">{log.recipientPhone}</td>
                   <td className="py-2 pr-4 font-mono text-xs">{log.lockerNumber}</td>
+                  <td className="py-2 pr-4 font-mono text-xs tracking-widest">{log.code}</td>
+                  <td className="py-2 pr-4 text-xs text-gray-500">{log.provider}</td>
                   <td className="py-2 pr-4 text-xs text-gray-500 whitespace-nowrap">
                     {new Date(log.sentAt).toLocaleString()}
                   </td>
