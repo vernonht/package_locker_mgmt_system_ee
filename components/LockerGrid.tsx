@@ -30,12 +30,15 @@ function HoldTimer({ heldAt }: { heldAt: string }) {
   return <span className="text-xs font-mono">{remaining}</span>
 }
 
-export function LockerGrid() {
+type Props = { refreshTrigger?: number }
+
+export function LockerGrid({ refreshTrigger = 0 }: Props) {
   const [lockers, setLockers] = useState<Locker[]>([])
 
   const refresh = useCallback(async () => {
     try {
       const data = await lockerApi.fetchAll()
+      data.sort((a, b) => a.lockerNumber.localeCompare(b.lockerNumber))
       setLockers(data)
     } catch (err) {
       console.error(err)
@@ -47,6 +50,10 @@ export function LockerGrid() {
     const id = setInterval(refresh, 5000)
     return () => clearInterval(id)
   }, [refresh])
+
+  useEffect(() => {
+    if (refreshTrigger > 0) refresh()
+  }, [refreshTrigger, refresh])
 
   return (
     <div>
