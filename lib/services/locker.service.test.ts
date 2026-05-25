@@ -17,6 +17,21 @@ test('getAllLockers returns all lockers', async () => {
   expect(await svc.getAllLockers()).toHaveLength(2)
 })
 
+test('getAllLockers filters by status and size', async () => {
+  const { repo, strategy } = await makeStubs([
+    { status: 'AVAILABLE', size: 'SMALL' },
+    { status: 'AVAILABLE', size: 'MEDIUM' },
+    { status: 'OCCUPIED', size: 'SMALL' },
+  ])
+  const svc = createLockerService(repo, strategy)
+
+  const lockers = await svc.getAllLockers({ status: 'AVAILABLE', size: 'SMALL' })
+
+  expect(lockers).toHaveLength(1)
+  expect(lockers[0].status).toBe('AVAILABLE')
+  expect(lockers[0].size).toBe('SMALL')
+})
+
 test('getAvailableLockers returns only AVAILABLE lockers', async () => {
   const { repo, strategy } = await makeStubs([{ status: 'AVAILABLE' }, { status: 'OCCUPIED' }])
   const svc = createLockerService(repo, strategy)

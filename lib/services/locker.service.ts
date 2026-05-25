@@ -1,4 +1,5 @@
 import type { LockerRepository } from '@/lib/repositories/interfaces/locker.repository'
+import type { LockerFilters } from '@/lib/repositories/interfaces/locker.repository'
 import type { AllocationStrategy } from '@/lib/strategies/allocation.strategy'
 import type { LockerSize } from '@/lib/models/locker'
 import { LockerNotHeldError, HoldExpiredError } from '@/lib/errors'
@@ -7,7 +8,7 @@ import { createLocker } from '@/lib/factories/locker.factory'
 const HOLD_TTL_MS = 10 * 60 * 1000
 
 export const createLockerService = (repo: LockerRepository, strategy: AllocationStrategy) => ({
-  getAllLockers:        () => repo.findAll(),
+  getAllLockers:        (filters?: LockerFilters) => repo.findAll(filters),
   getAvailableLockers: () => repo.findAvailable(),
 
   releaseExpiredHolds: async () => {

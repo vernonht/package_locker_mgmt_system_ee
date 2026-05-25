@@ -12,6 +12,25 @@ test('findAll returns all saved lockers', async () => {
   expect(await repo.findAll()).toHaveLength(2)
 })
 
+test('findAll filters by status', async () => {
+  const repo = await makeRepo({ status: 'AVAILABLE' }, { status: 'HOLD' }, { status: 'OCCUPIED' })
+  const lockers = await repo.findAll({ status: 'AVAILABLE' })
+  expect(lockers).toHaveLength(1)
+  expect(lockers[0].status).toBe('AVAILABLE')
+})
+
+test('findAll filters by size and status', async () => {
+  const repo = await makeRepo(
+    { size: 'SMALL', status: 'AVAILABLE' },
+    { size: 'SMALL', status: 'HOLD' },
+    { size: 'MEDIUM', status: 'AVAILABLE' },
+  )
+  const lockers = await repo.findAll({ size: 'SMALL', status: 'AVAILABLE' })
+  expect(lockers).toHaveLength(1)
+  expect(lockers[0].size).toBe('SMALL')
+  expect(lockers[0].status).toBe('AVAILABLE')
+})
+
 test('findById returns correct locker', async () => {
   const locker = createLocker()
   const repo = createInMemoryLockerRepository()

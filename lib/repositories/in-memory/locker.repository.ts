@@ -4,7 +4,17 @@ import type { LockerRepository } from '@/lib/repositories/interfaces/locker.repo
 export const createInMemoryLockerRepository = (
   store = new Map<string, Locker>(),
 ): LockerRepository => ({
-  findAll:      () => Promise.resolve([...store.values()]),
+  findAll: (filters) => {
+    if (!filters?.status && !filters?.size) return Promise.resolve(Array.from(store.values()))
+
+    const matches: Locker[] = []
+    for (const locker of store.values()) {
+      if (filters.status && locker.status !== filters.status) continue
+      if (filters.size && locker.size !== filters.size) continue
+      matches.push(locker)
+    }
+    return Promise.resolve(matches)
+  },
   findById:     (id) => Promise.resolve(store.get(id) ?? null),
   findAvailable:() => Promise.resolve([...store.values()].filter(l => l.status === 'AVAILABLE')),
   findHeld:     () => Promise.resolve([...store.values()].filter(l => l.status === 'HOLD')),

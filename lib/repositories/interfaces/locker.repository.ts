@@ -1,7 +1,12 @@
-import type { Locker } from '@/lib/models/locker'
+import type { Locker, LockerSize, LockerStatus } from '@/lib/models/locker'
+
+export type LockerFilters = {
+  status?: LockerStatus
+  size?: LockerSize
+}
 
 export type LockerRepository = {
-  findAll(): Promise<Locker[]>
+  findAll(filters?: LockerFilters): Promise<Locker[]>
   findById(id: string): Promise<Locker | null>
   findAvailable(): Promise<Locker[]>
   findHeld(): Promise<Locker[]>

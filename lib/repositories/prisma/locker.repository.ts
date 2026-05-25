@@ -15,8 +15,12 @@ const toLocker = (r: Record<string, unknown>): Locker => ({
 })
 
 export const createPrismaLockerRepository = (prisma: PrismaClient): LockerRepository => ({
-  findAll: async () => {
-    const rows = await prisma.locker.findMany()
+  findAll: async (filters) => {
+    const where = {
+      ...(filters?.status ? { status: filters.status } : {}),
+      ...(filters?.size ? { size: filters.size } : {}),
+    }
+    const rows = await prisma.locker.findMany({ where })
     return rows.map(toLocker)
   },
 
