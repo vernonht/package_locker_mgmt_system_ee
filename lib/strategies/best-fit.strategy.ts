@@ -15,7 +15,7 @@ export const bestFitByVolume: AllocationStrategy = (w, h, d, availableLockers) =
     if (!fitsDimensions) continue
 
     sawDimensionFit = true
-    if (locker.status !== 'AVAILABLE') continue
+    if (locker.status !== 'AVAILABLE') continue // Shouldn't happen, but skip just in case
 
     const volume = locker.maxWidth * locker.maxHeight * locker.maxDepth
     if (volume < bestVolume) {

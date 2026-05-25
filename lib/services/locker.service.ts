@@ -18,8 +18,8 @@ export const createLockerService = (repo: LockerRepository, strategy: Allocation
   },
 
   holdBestFit: async (w: number, h: number, d: number) => {
-    const all = await repo.findAll()
-    const locker = strategy(w, h, d, all)
+    const available = await repo.findAvailable()
+    const locker = strategy(w, h, d, available)
     await repo.update(locker.id, { status: 'HOLD', heldAt: new Date() })
     return repo.findById(locker.id)
   },
