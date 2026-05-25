@@ -2,14 +2,29 @@ import type { Locker } from '@/lib/models/locker'
 import type { AllocationStrategy } from './allocation.strategy'
 import { ParcelTooLargeError, LockerUnavailableError } from '@/lib/errors'
 
-export const bestFitByVolume: AllocationStrategy = (w, h, d, candidates) => {
-  const volume = (l: Locker) => l.maxWidth * l.maxHeight * l.maxDepth
-  const fitting = candidates.filter(l => l.maxWidth >= w && l.maxHeight >= h && l.maxDepth >= d)
+export const bestFitByVolume: AllocationStrategy = (w, h, d, availableLockers) => {
+  if (availableLockers.length === 0) throw new LockerUnavailableError()
 
-  if (fitting.length === 0) throw new ParcelTooLargeError(`${w}×${h}×${d}`)
+  let sawDimensionFit = false
+  let best: Locker | null = null
+  let bestVolume = Number.POSITIVE_INFINITY
 
-  const available = fitting.filter(l => l.status === 'AVAILABLE')
-  if (available.length === 0) throw new LockerUnavailableError()
+  // Single-pass scan avoids creating/sorting large arrays for very large locker pools.
+  for (const locker of availableLockers) {
+    const fitsDimensions = locker.maxWidth >= w && locker.maxHeight >= h && locker.maxDepth >= d
+    if (!fitsDimensions) continue
 
-  return available.sort((a, b) => volume(a) - volume(b))[0]
+    sawDimensionFit = true
+    if (locker.status !== 'AVAILABLE') continue
+
+    const volume = locker.maxWidth * locker.maxHeight * locker.maxDepth
+    if (volume < bestVolume) {
+      best = locker
+      bestVolume = volume
+    }
+  }
+
+  if (best) return best
+  if (sawDimensionFit) throw new LockerUnavailableError()
+  throw new ParcelTooLargeError(`${w}×${h}×${d}`)
 }
